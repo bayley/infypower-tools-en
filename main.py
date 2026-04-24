@@ -62,11 +62,12 @@ class Window(FluentWindow):
 
         self.can_device = CANDev()
         REGx_Init(self.can_device)
-        self.canController_info = CANControllerInfo()  # 仅供 manual_widget 使用
+        self.canController_info = CANControllerInfo()  # home_widget 和 manual_widget 共享同一实例
 
         self.homeInterface = GroupHomeWidget(
             can_device=self.can_device,
             config=self._config,
+            canController_info=self.canController_info,
             parent=self,
         )
         self.homeInterface.setObjectName('GroupHomeWidget')

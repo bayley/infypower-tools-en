@@ -19,11 +19,12 @@ from REG1K0100A2 import (
 
 
 class GroupHomeWidget(QFrame):
-    def __init__(self, can_device, config, parent=None):
+    def __init__(self, can_device, config, canController_info, parent=None):
         super().__init__(parent)
         self.setObjectName('GroupHomeWidget')
         self._can = can_device
         self._cfg = config
+        self._legacy_info = canController_info   # 传入 main.py 的 CANControllerInfo 实例
         self._state = GroupState(group_id=config.default_group)
         self._poller = None  # 延迟到 CAN 打开后创建
 
@@ -38,6 +39,22 @@ class GroupHomeWidget(QFrame):
         self._ui_timer = QTimer(self)
         self._ui_timer.timeout.connect(self._refresh_aggregate_view)
         self._ui_timer.start(200)
+
+        # RX 泵：从 CAN 设备拉消息 → REGx_CAN_ReceviceCallback → listener 链
+        # 旧 MainWindow.checkForData 的职责搬到这里。
+        self._rx_timer = QTimer(self)
+        self._rx_timer.timeout.connect(self._pump_rx)
+        self._rx_timer.start(30)   # ~33 Hz，对齐旧 main 的 90ms 也可以，这里略快一些
+
+        # CAN1/CAN2 连接状态超时判定：500ms 内无 RX 就降级到 INFOAMTION
+        self._can1_alive_timer = QTimer(self)
+        self._can1_alive_timer.setSingleShot(True)
+        self._can1_alive_timer.timeout.connect(
+            lambda: self.bdg_can1.setLevel(InfoLevel.INFOAMTION))
+        self._can2_alive_timer = QTimer(self)
+        self._can2_alive_timer.setSingleShot(True)
+        self._can2_alive_timer.timeout.connect(
+            lambda: self.bdg_can2.setLevel(InfoLevel.INFOAMTION))
 
     def _build_ui(self):
         root = QVBoxLayout(self)
@@ -352,6 +369,36 @@ class GroupHomeWidget(QFrame):
             self._poller.stop()
             self._poller.detach()
         super().closeEvent(event)
+
+    def _pump_rx(self):
+        """从 CAN 设备拉取待接收的消息并投递到 REGx_CAN_ReceviceCallback。"""
+        if not self._can.isCanOpen:
+            return
+
+        from REG1K0100A2 import REGx_Poll
+
+        msgs1, ret1 = self._can.read_ch1()
+        if ret1 < 0:
+            # 读取失败 → 自动关 CAN（与旧 MainWindow.checkForData 行为一致）
+            self.btn_can.setChecked(False)
+            self._toggle_can()
+            return
+        if ret1 > 0:
+            self.bdg_can1.setLevel(InfoLevel.SUCCESS)
+            self._can1_alive_timer.start(500)
+
+        msgs2, ret2 = self._can.read_ch2()
+        if ret2 < 0:
+            self.btn_can.setChecked(False)
+            self._toggle_can()
+            return
+        if ret2 > 0:
+            self.bdg_can2.setLevel(InfoLevel.SUCCESS)
+            self._can2_alive_timer.start(500)
+
+        # 旧路径：REGx_Poll 内部分发每条消息给 REGx_CAN_ReceviceCallback，
+        # 同时处理周期性轮询请求（0.5s 发一次）。
+        REGx_Poll(msgs1, self._legacy_info)
 
     def _chart_listener(self, ev):
         # 组级 0x08 → 整组曲线
