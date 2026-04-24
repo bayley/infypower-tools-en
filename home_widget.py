@@ -375,8 +375,6 @@ class GroupHomeWidget(QFrame):
         if not self._can.isCanOpen:
             return
 
-        from REG1K0100A2 import REGx_Poll
-
         msgs1, ret1 = self._can.read_ch1()
         if ret1 < 0:
             # 读取失败 → 自动关 CAN（与旧 MainWindow.checkForData 行为一致）
@@ -396,9 +394,12 @@ class GroupHomeWidget(QFrame):
             self.bdg_can2.setLevel(InfoLevel.SUCCESS)
             self._can2_alive_timer.start(500)
 
-        # 旧路径：REGx_Poll 内部分发每条消息给 REGx_CAN_ReceviceCallback，
-        # 同时处理周期性轮询请求（0.5s 发一次）。
-        REGx_Poll(msgs1, self._legacy_info)
+        # 每条消息走一次 RX 回调：填旧 CANControllerInfo（manual_widget 用）+ 派发 RxEvent listener（新 group_poller / chart 用）
+        from REG1K0100A2 import REGx_CAN_ReceviceCallback
+        for m in msgs1:
+            REGx_CAN_ReceviceCallback(m, self._legacy_info)
+        for m in msgs2:
+            REGx_CAN_ReceviceCallback(m, self._legacy_info)
 
     def _chart_listener(self, ev):
         # 组级 0x08 → 整组曲线
