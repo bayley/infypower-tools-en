@@ -96,3 +96,9 @@ def test_module_alarms_decodes_status2_bits():
     m = ModuleState(addr=0x00, status2=(1 << 7) | (1 << 6))
     assert "模块PFC侧处于关机状态" in m.alarms
     assert "输入过压告警" in m.alarms
+
+
+def test_module_alarms_skips_walkin_bit():
+    from group_state import ModuleState
+    m = ModuleState(addr=0x00, status1=(1 << 6))
+    assert m.alarms == []

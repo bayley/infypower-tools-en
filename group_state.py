@@ -31,7 +31,7 @@ class ModuleState:
         return bool(self.status0 & (1 << 4))
 
     @property
-    def alarms(self) -> list:
+    def alarms(self) -> list[str]:
         out = []
         s0, s1, s2 = self.status0, self.status1, self.status2
 
@@ -40,8 +40,8 @@ class ModuleState:
         if s0 & (1 << 5): out.append("模块放电异常")
         if s0 & (1 << 3): out.append("输入或母线异常")
 
+        # 注意：status1 bit 6（Walk-In 使能）是默认特性标志，不算告警
         if s1 & (1 << 7): out.append("模块通信中断告警")
-        if s1 & (1 << 6): out.append("Walk-In 使能")
         if s1 & (1 << 5): out.append("输出过压告警")
         if s1 & (1 << 4): out.append("过温告警")
         if s1 & (1 << 3): out.append("风扇故障告警")
