@@ -48,3 +48,37 @@ def test_load_returns_defaults_on_corrupt_file(tmp_path):
     result = mgr.load()
 
     assert result.device_name == "REG1K0100A2 充电模块"
+
+
+def test_load_returns_new_default_fields(tmp_path):
+    from config_manager import ConfigManager
+    cfg_path = tmp_path / "config.json"
+    mgr = ConfigManager(config_path=str(cfg_path))
+    result = mgr.load()
+
+    assert result.default_group == 1
+    assert result.group_range_max == 15
+    assert result.module_pending_timeout_ms == 3000
+    assert result.module_offline_timeout_ms == 10000
+    assert result.module_gone_timeout_ms == 30000
+    assert result.poll_interval_ms == 100
+    assert result.group_discover_timeout_ms == 600
+
+
+def test_load_falls_back_when_old_config_missing_new_fields(tmp_path):
+    import json
+    from config_manager import ConfigManager
+    cfg_path = tmp_path / "config.json"
+    cfg_path.write_text(json.dumps({
+        "device_name": "old",
+        "voltage_max": 800.0,
+        "voltage_min": 100.0,
+        "current_max": 50.0,
+        "current_min": 0.0,
+    }), encoding='utf-8')
+    mgr = ConfigManager(config_path=str(cfg_path))
+    result = mgr.load()
+
+    assert result.device_name == "old"
+    assert result.default_group == 1
+    assert result.poll_interval_ms == 100
