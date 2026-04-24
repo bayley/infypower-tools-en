@@ -57,3 +57,23 @@ class ModuleState:
         if s2 & (1 << 1): out.append("模块ID重复")
 
         return out
+
+
+@dataclass
+class GroupState:
+    group_id: int
+    voltage: float = 0.0
+    total_current: float = 0.0
+    modules: dict = field(default_factory=dict)
+
+    @property
+    def total_power(self) -> float:
+        return self.voltage * self.total_current
+
+    @property
+    def is_on(self) -> bool:
+        return self.voltage > 5.0
+
+    @property
+    def module_count(self) -> int:
+        return len(self.modules)

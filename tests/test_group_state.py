@@ -102,3 +102,42 @@ def test_module_alarms_skips_walkin_bit():
     from group_state import ModuleState
     m = ModuleState(addr=0x00, status1=(1 << 6))
     assert m.alarms == []
+
+
+def test_group_state_total_power_is_voltage_times_current():
+    from group_state import GroupState
+    g = GroupState(group_id=1, voltage=500.0, total_current=20.0)
+    assert g.total_power == 10000.0
+
+
+def test_group_state_total_power_is_zero_when_voltage_zero():
+    from group_state import GroupState
+    g = GroupState(group_id=1, voltage=0.0, total_current=20.0)
+    assert g.total_power == 0.0
+
+
+def test_group_state_is_on_when_voltage_above_threshold():
+    from group_state import GroupState
+    g = GroupState(group_id=1, voltage=10.0)
+    assert g.is_on is True
+
+
+def test_group_state_is_off_when_voltage_below_threshold():
+    from group_state import GroupState
+    g = GroupState(group_id=1, voltage=2.0)
+    assert g.is_on is False
+
+
+def test_group_state_modules_starts_empty():
+    from group_state import GroupState
+    g = GroupState(group_id=2)
+    assert g.modules == {}
+    assert g.module_count == 0
+
+
+def test_group_state_module_count_reflects_dict():
+    from group_state import GroupState, ModuleState
+    g = GroupState(group_id=2)
+    g.modules[0x00] = ModuleState(addr=0x00)
+    g.modules[0x01] = ModuleState(addr=0x01)
+    assert g.module_count == 2
