@@ -74,7 +74,7 @@ def test_poller_stop_cancels_chain(setup):
     assert len(can.sent) == 1  # 只有起步那一条
 
 
-def test_discover_collects_srcAddrs_into_state_modules(setup, monkeypatch):
+def test_discover_collects_srcAddrs_into_state_modules(setup):
     import REG1K0100A2
     from group_poller import GroupPoller
     can, state, sch = setup
@@ -113,3 +113,44 @@ def test_discover_calls_on_finish_with_empty_set_on_timeout(setup):
                              on_finish=lambda found: captured.append(found))
     sch.step()
     assert captured == [set()]
+
+
+def test_attach_detach_are_idempotent(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+
+    poller.attach()
+    poller.attach()  # 二次 attach 不应再注册
+    assert REG1K0100A2._rx_listeners.count(poller._on_rx) == 1
+
+    poller.detach()
+    poller.detach()  # 二次 detach 不应崩
+    assert poller._on_rx not in REG1K0100A2._rx_listeners
+
+
+def test_discover_on_finish_receives_snapshot_not_live_reference(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    state.modules.clear()
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+
+    captured = []
+    poller.discover_modules(group_id=1, timeout_ms=600,
+                             on_finish=lambda s: captured.append(s))
+
+    # 模拟 1 个模块在 timeout 前回复
+    poller._on_rx(REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0B, cmdCode=0x04,
+                                       dstAddr=0xF0, srcAddr=0x05,
+                                       data=bytes(8)))
+    sch.step()  # _finish
+
+    assert captured == [{0x05}]
+
+    # 一个晚到的 RX 进来 — caller 持有的 set 不应被改变
+    poller._on_rx(REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0B, cmdCode=0x04,
+                                       dstAddr=0xF0, srcAddr=0x06,
+                                       data=bytes(8)))
+    assert captured == [{0x05}]   # 仍然 {0x05}，没有 0x06

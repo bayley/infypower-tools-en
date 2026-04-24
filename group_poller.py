@@ -77,16 +77,20 @@ class GroupPoller:
             self._attached = False
 
     def discover_modules(self, group_id: int, timeout_ms: int, on_finish):
+        """启动一次组级模块发现：发 0x04 广播，timeout_ms 后通过 on_finish 回调返回所发现的模块地址集合。
+        注意：调用方应当在 on_finish 内决定是否启动 start_cycle()，不要并发调用。
+        """
         self._state.group_id = group_id
-        self._discover_seen = set()
-        self.attach()  # idempotent
+        _seen = set()
+        self._discover_seen = _seen   # _on_rx 写入此局部别名（同时也是实例字段）
+        self.attach()
         REGx_GroupReadModulesStatus(group_id)
 
         def _finish():
-            for addr in self._discover_seen:
+            for addr in _seen:
                 if addr not in self._state.modules:
                     self._state.modules[addr] = ModuleState(addr=addr, last_seen=time.time())
-            on_finish(self._discover_seen)
+            on_finish(set(_seen))   # 传副本，避免后续 RX 突变调用方持有的引用
 
         self._sched(timeout_ms, _finish)
 
