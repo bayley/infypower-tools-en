@@ -280,9 +280,9 @@ class RealtimeChart(QFrame):
         self._paused     = False
         self.setFrameShape(QFrame.NoFrame)
         self._target = 'group'   # 'group' or int (module addr)
-        self._volt_max_group = float(volt_max) if volt_max > 0 else 1000.0
-        self._curr_max_group = float(curr_max) if curr_max > 0 else 100.0
-        self._pwr_max_group  = float(pwr_max)  if pwr_max  > 0 else 30000.0
+        self._volt_max_single = float(volt_max) if volt_max > 0 else 1000.0
+        self._curr_max_single = float(curr_max) if curr_max > 0 else 100.0
+        self._module_count = 0   # N-dynamic, updated by set_module_options
         self._build_ui()
 
     # ── 公共接口 ─────────────────────────────────────────────
@@ -298,39 +298,46 @@ class RealtimeChart(QFrame):
         self._pwr_leg.set_value(f'{power:.0f} W')
 
     def set_target(self, target):
-        """target = 'group' or int (module addr)"""
+        """target = 'group' or int (module addr)；切换时清空缓冲、解除暂停、根据模块数动态设定量程。"""
         self._target = target
         self._volt_data.clear()
         self._curr_data.clear()
         self._pwr_data.clear()
         self._paused = False
         self._pause_btn.setIcon(FIF.PAUSE)
-        # 量程：模块视角时退化
+        n = max(self._module_count, 1)
+        self._volt_max = self._volt_max_single
         if target == 'group':
-            self._volt_max = self._volt_max_group
-            self._curr_max = self._curr_max_group
-            self._pwr_max  = self._pwr_max_group
+            # 组总电流/功率 = 单模块 × N；电压不随 N 变
+            self._curr_max = self._curr_max_single * n
+            self._pwr_max  = self._volt_max_single * self._curr_max_single * n
         else:
-            self._volt_max = self._volt_max_group   # 单模块电压量程同组
-            self._curr_max = self._curr_max_group / max(self._target_combo.count() - 1, 1)
-            self._pwr_max  = self._volt_max * self._curr_max
+            self._curr_max = self._curr_max_single
+            self._pwr_max  = self._volt_max_single * self._curr_max_single
         self._canvas.update()
 
     def set_module_options(self, addrs):
-        """从外部更新 dropdown 选项，保留当前选择若仍存在"""
+        """从外部更新 dropdown 选项，并同步模块数到 N-动态量程。若当前选中的模块消失则回退到整组视图（完整重置）。"""
         cur = self._target_combo.currentText()
+        addrs_sorted = sorted(addrs)
+        self._module_count = len(addrs_sorted)
         self._target_combo.blockSignals(True)
         self._target_combo.clear()
         self._target_combo.addItem('整组')
-        for a in sorted(addrs):
+        for a in addrs_sorted:
             self._target_combo.addItem(f'模块 0x{a:02X}')
         idx = self._target_combo.findText(cur)
         if idx >= 0:
             self._target_combo.setCurrentIndex(idx)
+            self._target_combo.blockSignals(False)
+            # 当前选中仍存在：如果是 'group'，N 变了所以量程需要重算
+            if self._target == 'group':
+                self.set_target('group')
         else:
+            # 原选中的模块已不在列表中 → 回退到整组 + 完整重置
             self._target_combo.setCurrentIndex(0)
-            self._target = 'group'
-        self._target_combo.blockSignals(False)
+            self._target_combo.blockSignals(False)
+            self.set_target('group')
 
     def push_group(self, volt: float, curr: float, power: float):
         if self._target == 'group':
@@ -345,7 +352,7 @@ class RealtimeChart(QFrame):
             self.set_target('group')
             return
         text = self._target_combo.currentText()
-        # 'module 0x05' → 5
+        # '模块 0x05' → 5
         try:
             addr = int(text.split('0x')[1], 16)
             self.set_target(addr)
