@@ -56,3 +56,21 @@ def test_unregister_listener():
     info = REG1K0100A2.CANControllerInfo()
     REG1K0100A2.REGx_CAN_ReceviceCallback(msg, info)
     assert captured == []
+
+
+def test_exception_in_listener_does_not_abort_next():
+    import REG1K0100A2
+    REG1K0100A2._rx_listeners.clear()
+
+    def _boom(ev):
+        raise RuntimeError("boom")
+
+    captured = []
+    REG1K0100A2.REGx_RegisterListener(_boom)
+    REG1K0100A2.REGx_RegisterListener(lambda ev: captured.append(ev))
+
+    msg = _FakeMsg(0x0289F000, bytes([0, 3, 0x0D, 0x40, 0, 0, 0x13, 0x88]))
+    info = REG1K0100A2.CANControllerInfo()
+    REG1K0100A2.REGx_CAN_ReceviceCallback(msg, info)
+
+    assert len(captured) == 1  # second listener still ran

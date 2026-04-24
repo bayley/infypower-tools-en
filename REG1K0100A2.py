@@ -1,6 +1,8 @@
 import struct
 import time
+import traceback
 import HDL_CAN
+from dataclasses import dataclass
 
 REGx_INPUT_AC_VOLT_MAX = 530  # Unit: V
 REGx_INPUT_AC_VOLT_MIN = 260  # Unit: V
@@ -64,8 +66,6 @@ class CANControllerInfo:
 
 g_candevice = None
 g_log_callback = None  # 由 ManualWidget 注册，签名: (direction: str, identifier: int, data: bytes, desc: str)
-
-from dataclasses import dataclass
 
 @dataclass
 class RxEvent:
@@ -622,11 +622,13 @@ def REGx_CAN_ReceviceCallback(can_msg,canController_info:CANControllerInfo):
         srcAddr=response.srcAddr,
         data=bytes(response.data),
     )
+    # snapshot: allows listeners to unregister during dispatch
     for cb in list(_rx_listeners):
         try:
             cb(ev)
         except Exception as e:
             print(f"[REGx listener exception] {e}")
+            traceback.print_exc()
 
 
 # ─── 组级便捷包装 ────────────────────────────────────────
