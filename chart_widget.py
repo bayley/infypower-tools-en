@@ -10,7 +10,7 @@ from PyQt5.QtGui import (QColor, QFont, QLinearGradient, QPainter,
                           QPainterPath, QPen, QBrush)
 from PyQt5.QtWidgets import (QFrame, QHBoxLayout, QLabel, QSizePolicy,
                               QVBoxLayout, QWidget)
-from qfluentwidgets import (CaptionLabel, CheckBox, FluentIcon as FIF,
+from qfluentwidgets import (CaptionLabel, CheckBox, ComboBox, FluentIcon as FIF,
                              StrongBodyLabel, ToolButton, isDarkTheme)
 
 # ─── 配色（Catppuccin Mocha × Fluent）─────────────────────────
@@ -279,6 +279,10 @@ class RealtimeChart(QFrame):
         self._show_pwr   = True
         self._paused     = False
         self.setFrameShape(QFrame.NoFrame)
+        self._target = 'group'   # 'group' or int (module addr)
+        self._volt_max_group = float(volt_max) if volt_max > 0 else 1000.0
+        self._curr_max_group = float(curr_max) if curr_max > 0 else 100.0
+        self._pwr_max_group  = float(pwr_max)  if pwr_max  > 0 else 30000.0
         self._build_ui()
 
     # ── 公共接口 ─────────────────────────────────────────────
@@ -293,6 +297,61 @@ class RealtimeChart(QFrame):
         self._curr_leg.set_value(f'{curr:.2f} A')
         self._pwr_leg.set_value(f'{power:.0f} W')
 
+    def set_target(self, target):
+        """target = 'group' or int (module addr)"""
+        self._target = target
+        self._volt_data.clear()
+        self._curr_data.clear()
+        self._pwr_data.clear()
+        self._paused = False
+        self._pause_btn.setIcon(FIF.PAUSE)
+        # 量程：模块视角时退化
+        if target == 'group':
+            self._volt_max = self._volt_max_group
+            self._curr_max = self._curr_max_group
+            self._pwr_max  = self._pwr_max_group
+        else:
+            self._volt_max = self._volt_max_group   # 单模块电压量程同组
+            self._curr_max = self._curr_max_group / max(self._target_combo.count() - 1, 1)
+            self._pwr_max  = self._volt_max * self._curr_max
+        self._canvas.update()
+
+    def set_module_options(self, addrs):
+        """从外部更新 dropdown 选项，保留当前选择若仍存在"""
+        cur = self._target_combo.currentText()
+        self._target_combo.blockSignals(True)
+        self._target_combo.clear()
+        self._target_combo.addItem('整组')
+        for a in sorted(addrs):
+            self._target_combo.addItem(f'模块 0x{a:02X}')
+        idx = self._target_combo.findText(cur)
+        if idx >= 0:
+            self._target_combo.setCurrentIndex(idx)
+        else:
+            self._target_combo.setCurrentIndex(0)
+            self._target = 'group'
+        self._target_combo.blockSignals(False)
+
+    def push_group(self, volt: float, curr: float, power: float):
+        if self._target == 'group':
+            self.push(volt, curr, power)
+
+    def push_module(self, addr: int, volt: float, curr: float):
+        if self._target == addr:
+            self.push(volt, curr, volt * curr)
+
+    def _on_target_changed(self, idx: int):
+        if idx <= 0:
+            self.set_target('group')
+            return
+        text = self._target_combo.currentText()
+        # 'module 0x05' → 5
+        try:
+            addr = int(text.split('0x')[1], 16)
+            self.set_target(addr)
+        except (IndexError, ValueError):
+            self.set_target('group')
+
     # ── 构建 UI ──────────────────────────────────────────────
     def _build_ui(self):
         vbox = QVBoxLayout(self)
@@ -304,6 +363,12 @@ class RealtimeChart(QFrame):
         hdr.addWidget(StrongBodyLabel('实时曲线'))
         hdr.addStretch()
         hdr.addWidget(CaptionLabel(f'时间窗口 {self.WINDOW_SECONDS} s'))
+
+        self._target_combo = ComboBox()
+        self._target_combo.addItem('整组')
+        self._target_combo.setMinimumWidth(110)
+        self._target_combo.currentIndexChanged.connect(self._on_target_changed)
+        hdr.addWidget(self._target_combo)
 
         self._pause_btn = ToolButton(FIF.PAUSE, self)
         self._pause_btn.setToolTip('暂停 / 恢复')
