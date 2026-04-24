@@ -1,8 +1,9 @@
 from PyQt5.QtCore import Qt, QRect, QEvent
-from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import (QStyledItemDelegate, QStyle, QStyleOptionButton,
-                              QApplication, QHeaderView, QWidget, QHBoxLayout)
-from qfluentwidgets import TableWidget, IconInfoBadge, FluentIcon as FIF, InfoLevel
+                              QApplication, QHeaderView, QWidget, QHBoxLayout,
+                              QTableWidgetItem)
+from qfluentwidgets import TableWidget, IconInfoBadge, FluentIcon as FIF
 
 
 class _CheckDelegate(QStyledItemDelegate):
@@ -68,7 +69,6 @@ class ModuleTable(TableWidget):
 
     def update_modules(self, state, now_ms_thresholds: tuple):
         """state: GroupState；now_ms_thresholds: (now_time, pending_ms, offline_ms, gone_ms)"""
-        from PyQt5.QtWidgets import QTableWidgetItem
         now, pending_ms, offline_ms, gone_ms = now_ms_thresholds
         addrs = sorted(state.modules.keys())
         self.setRowCount(len(addrs))
@@ -119,7 +119,10 @@ class ModuleTable(TableWidget):
             item = self.item(row, col)
             if item is None:
                 continue
-            item.setBackground(color if color else QColor(0, 0, 0, 0))
+            if color is None:
+                item.setData(Qt.BackgroundRole, None)
+            else:
+                item.setBackground(color)
 
     def _handle_sleep(self, row: int, col: int, new_state: bool):
         addr_item = self.item(row, COL_ADDR)
