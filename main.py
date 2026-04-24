@@ -1,13 +1,13 @@
 import sys
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import (QAction, QApplication, QFrame, QHBoxLayout,
                               QMenu, QSystemTrayIcon, QWidget)
 from qfluentwidgets import (Action, AvatarWidget, BodyLabel, CaptionLabel,
                              FluentIcon, FluentIcon as FIF, FluentWindow,
                              HyperlinkButton, MessageBox, NavigationAvatarWidget,
-                             NavigationItemPosition, SubtitleLabel, SwitchButton,
+                             NavigationItemPosition, SwitchButton,
                              Theme, isDarkTheme, setFont, setTheme, setThemeColor)
 from qfluentwidgets.components.material import AcrylicMenu
 
