@@ -1,3 +1,5 @@
+import time
+
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QSplitter,
                               QVBoxLayout, QWidget)
@@ -12,7 +14,7 @@ from group_poller import GroupPoller
 from module_table import ModuleTable
 from REG1K0100A2 import (
     REGx_GroupSetOutput, REGx_GroupLaunch, REGx_GroupClose,
-    REGx_SetSleep, REGx_SetGreenLED,
+    REGx_SetSleep, REGx_SetGreenLED, REGx_RegisterListener,
 )
 
 
@@ -28,6 +30,14 @@ class GroupHomeWidget(QFrame):
         self._build_ui()
         self._wire_signals()
         self._set_idle_state()  # 全部 disabled
+
+        # RX 监听：把 CAN 帧里的组聚合 / 模块 V/I 推到 chart
+        REGx_RegisterListener(self._chart_listener)
+
+        # 周期 UI 刷新
+        self._ui_timer = QTimer(self)
+        self._ui_timer.timeout.connect(self._refresh_aggregate_view)
+        self._ui_timer.start(200)
 
     def _build_ui(self):
         root = QVBoxLayout(self)
@@ -203,11 +213,148 @@ class GroupHomeWidget(QFrame):
         self.btn_open.setEnabled(True)
         self.btn_close.setEnabled(True)
 
-    # ── 占位：下一任务实现 ───────────────────────────────────
-    def _toggle_can(self): pass
-    def _on_group_changed(self, idx: int): pass
-    def _discover_now(self): pass
-    def _on_apply_setpoint(self): pass
-    def _on_group_power(self, on: bool): pass
-    def _on_sleep_toggled(self, addr: int, new_state: bool): pass
-    def _on_led_toggled(self, addr: int, new_state: bool): pass
+    def _toggle_can(self):
+        if self.btn_can.isChecked():
+            if self._can.open_device():
+                self.btn_can.setText('关闭 CAN')
+                self._set_active_state()
+                self._poller = GroupPoller(
+                    state=self._state,
+                    schedule_fn=lambda d, cb: QTimer.singleShot(d, cb),
+                    poll_interval_ms=self._cfg.poll_interval_ms,
+                )
+                self._poller.attach()
+                # 立即对默认组发起一次发现
+                self._bind_group(self._cfg.default_group)
+            else:
+                self.btn_can.setChecked(False)
+        else:
+            if self._poller is not None:
+                self._poller.stop()
+                self._poller.detach()
+                self._poller = None
+            self._can.close_device()
+            self.btn_can.setText('打开 CAN')
+            self._set_idle_state()
+            self._state.modules.clear()
+            self.tbl.setRowCount(0)
+
+    def _on_group_changed(self, idx: int):
+        new_group = self.cbo_group.itemData(idx)
+        if new_group is None or new_group == self._state.group_id:
+            return
+        old_group = self._state.group_id
+        old_was_on = self._state.is_on
+
+        # 解绑旧组：停止周期，清空模块
+        if self._poller is not None:
+            self._poller.stop()
+        self._state.modules.clear()
+        self._state.voltage = 0.0
+        self._state.total_current = 0.0
+        self.tbl.setRowCount(0)
+
+        if old_was_on:
+            InfoBar.warning(
+                title='切组提示',
+                content=f'已切到组 {new_group}。旧组（组 {old_group}）将在约 10s 后因协议通讯中断保护自动关机。',
+                orient=Qt.Horizontal,
+                isClosable=True,
+                position=InfoBarPosition.TOP_RIGHT,
+                duration=8000,
+                parent=self,
+            )
+
+        self._bind_group(new_group)
+
+    def _bind_group(self, group_id: int):
+        if self._poller is None:
+            return
+        def on_finish(found):
+            self._refresh_aggregate_view()
+            self.chart.set_module_options(found)
+            if found:
+                self._poller.start_cycle()
+
+        self._poller.discover_modules(
+            group_id=group_id,
+            timeout_ms=self._cfg.group_discover_timeout_ms,
+            on_finish=on_finish,
+        )
+
+    def _discover_now(self):
+        if self._poller is None:
+            return
+        self._poller.stop()
+        self._state.modules.clear()
+        self.tbl.setRowCount(0)
+        self._bind_group(self._state.group_id)
+
+    def _on_apply_setpoint(self):
+        v = self.spn_v.value()
+        i = self.spn_i.value()
+        REGx_GroupSetOutput(self._state.group_id, v, i)
+
+    def _on_group_power(self, on: bool):
+        action = '启动' if on else '关闭'
+        m = MessageBox('确认执行', f'是否{action}组 {self._state.group_id} 的输出？', self)
+        if m.exec():
+            if on:
+                REGx_GroupLaunch(self._state.group_id)
+            else:
+                REGx_GroupClose(self._state.group_id)
+
+    def _on_sleep_toggled(self, addr: int, new_state: bool):
+        REGx_SetSleep(addr, new_state)
+
+    def _on_led_toggled(self, addr: int, new_state: bool):
+        # 本地 toggle，更新到 ModuleState（协议无读回）
+        m = self._state.modules.get(addr)
+        if m is not None:
+            m.led_blinking = new_state
+        REGx_SetGreenLED(addr, new_state)
+
+    def _refresh_aggregate_view(self):
+        s = self._state
+        self.lbl_v.setText(f'{s.voltage:.1f} V' if s.module_count else '— —')
+        self.lbl_i.setText(f'{s.total_current:.2f} A' if s.module_count else '— —')
+        self.lbl_p.setText(f'{s.total_power/1000:.2f} kW' if s.module_count else '— —')
+        if s.module_count:
+            temps = [m.temperature for m in s.modules.values()]
+            self.lbl_n.setText(f'{s.module_count} / {max(temps)}℃')
+        else:
+            self.lbl_n.setText('— —')
+        self.sw_state.blockSignals(True)
+        self.sw_state.setChecked(s.is_on)
+        self.sw_state.blockSignals(False)
+        # 模块表
+        self.tbl.update_modules(self._state, (
+            time.time(),
+            self._cfg.module_pending_timeout_ms,
+            self._cfg.module_offline_timeout_ms,
+            self._cfg.module_gone_timeout_ms,
+        ))
+        # 移除 gone 模块
+        gone = [a for a, m in s.modules.items()
+                if m.lifecycle(time.time(),
+                               self._cfg.module_pending_timeout_ms,
+                               self._cfg.module_offline_timeout_ms,
+                               self._cfg.module_gone_timeout_ms) == 'gone']
+        for a in gone:
+            s.modules.pop(a, None)
+        # 同步 chart dropdown
+        self.chart.set_module_options(s.modules.keys())
+
+    def _chart_listener(self, ev):
+        # 组级 0x08 → 整组曲线
+        if ev.cmdCode == 0x08 and ev.deviceCode == 0x0B and ev.srcAddr == self._state.group_id:
+            d = ev.data
+            v = ((d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3]) / 1000.0
+            i = ((d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7]) / 1000.0
+            self.chart.push_group(v, i, v * i)
+        # 模块级 0x09 → 模块曲线
+        elif ev.cmdCode == 0x09 and ev.deviceCode == 0x0A:
+            d = ev.data
+            v = ((d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3]) / 1000.0
+            i = ((d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7]) / 1000.0
+            self.chart.push_module(ev.srcAddr, v, i)
