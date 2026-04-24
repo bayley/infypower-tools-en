@@ -13,7 +13,11 @@ class GroupPoller:
         self._sched = schedule_fn
         self._interval = poll_interval_ms
         self._running = False
-        self._step_idx = 0   # 0=group, 1..N=module idx for 0x09, N+1..2N=module idx for 0x04
+        # step 0: 组 0x08；step 2k-1 (k=1..N): 0x09 mod[k-1]；step 2k: 0x04 mod[k-1]；N=0 时永远停在 0
+        self._step_idx = 0
+        # T9 discover_modules / T10 attach 会用到的预初始化字段
+        self._discover_seen = set()
+        self._attached = False
 
     def start_cycle(self):
         self._running = True
@@ -40,12 +44,16 @@ class GroupPoller:
             # step 1 = 0x09 addr[0], step 2 = 0x04 addr[0]
             # step 3 = 0x09 addr[1], step 4 = 0x04 addr[1]  etc.
             module_idx = (i - 1) // 2
-            is_state = (i - 1) % 2 == 1
-            addr = addrs[module_idx]
-            if is_state:
-                REGx_ReadStateRequest(addr)
+            if module_idx >= N:
+                # 模块在周期中途被踢出（T10 跨组检测）→ 跳过此步
+                pass
             else:
-                REGx_ReadOutputRequest(addr)
+                is_state = (i - 1) % 2 == 1
+                addr = addrs[module_idx]
+                if is_state:
+                    REGx_ReadStateRequest(addr)
+                else:
+                    REGx_ReadOutputRequest(addr)
         # 准备下一步
         self._step_idx = (i + 1) % total if N > 0 else 0
         self._sched(self._interval, self._next_step_wrapper)

@@ -19,6 +19,7 @@ class MockCAN:
 @pytest.fixture
 def mock_can(monkeypatch):
     import REG1K0100A2
+    REG1K0100A2._rx_listeners.clear()  # avoid leak across tests when T9/T10 register listeners
     mc = MockCAN()
     REG1K0100A2.REGx_Init(mc)
     monkeypatch.setattr(REG1K0100A2, 'g_log_callback', None)
