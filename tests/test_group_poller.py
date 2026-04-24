@@ -234,3 +234,65 @@ def test_rx_x8_group_updates_group_voltage_current(setup):
     assert state.total_current == pytest.approx(5.0)
 
     poller.detach()
+
+
+def test_rx_x9_unknown_module_is_ignored(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0A, cmdCode=0x09,
+                              dstAddr=0xF0, srcAddr=0xFF,  # not in state.modules
+                              data=bytes(8))
+    poller._on_rx(ev)  # must not raise, must not mutate state
+    assert 0xFF not in state.modules
+
+
+def test_rx_x4_unknown_module_is_ignored(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0A, cmdCode=0x04,
+                              dstAddr=0xF0, srcAddr=0xFF,
+                              data=bytes([0, 0, 1, 0, 25, 0, 0, 0]))
+    poller._on_rx(ev)
+    assert 0xFF not in state.modules
+
+
+def test_rx_x4_temperature_boundary_max_positive(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0A, cmdCode=0x04,
+                              dstAddr=0xF0, srcAddr=0x00,
+                              data=bytes([0, 0, 1, 0, 0x7F, 0, 0, 0]))
+    poller._on_rx(ev)
+    assert state.modules[0x00].temperature == 127
+
+
+def test_rx_x4_temperature_boundary_max_negative(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0A, cmdCode=0x04,
+                              dstAddr=0xF0, srcAddr=0x00,
+                              data=bytes([0, 0, 1, 0, 0x80, 0, 0, 0]))
+    poller._on_rx(ev)
+    assert state.modules[0x00].temperature == -128
+
+
+def test_rx_x4_temperature_negative_one(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0A, cmdCode=0x04,
+                              dstAddr=0xF0, srcAddr=0x00,
+                              data=bytes([0, 0, 1, 0, 0xFF, 0, 0, 0]))
+    poller._on_rx(ev)
+    assert state.modules[0x00].temperature == -1
