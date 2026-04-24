@@ -95,7 +95,48 @@ class GroupPoller:
         self._sched(timeout_ms, _finish)
 
     def _on_rx(self, ev):
-        # T9 scope: only handles group-level 0x04 discovery replies
-        # T10 will extend this to handle 0x09 / 0x04 / 0x08 for ongoing data updates
+        # 1) 组级 0x04 发现回复（discover_modules 期间）
         if ev.cmdCode == 0x04 and ev.deviceCode == 0x0B and ev.srcAddr != 0xF0:
             self._discover_seen.add(ev.srcAddr)
+
+        # 2) 模块级 0x09 → 更新模块 V/I + last_seen
+        if ev.cmdCode == 0x09 and ev.deviceCode == 0x0A:
+            addr = ev.srcAddr
+            m = self._state.modules.get(addr)
+            if m is None:
+                return
+            d = ev.data
+            v_mV = (d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3]
+            i_mA = (d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7]
+            m.voltage = v_mV / 1000.0
+            m.current = i_mA / 1000.0
+            m.last_seen = time.time()
+
+        # 3) 模块级 0x04 → 更新状态/温度/组号；若组号 ≠ 本组则踢出
+        if ev.cmdCode == 0x04 and ev.deviceCode == 0x0A:
+            addr = ev.srcAddr
+            m = self._state.modules.get(addr)
+            if m is None:
+                return
+            d = ev.data
+            reported_group = d[2]
+            if reported_group != self._state.group_id:
+                self._state.modules.pop(addr, None)
+                return
+            m.group_id_reported = reported_group
+            m.status3 = d[3]
+            # data[4] 是有符号 8bit 温度
+            t = d[4]
+            m.temperature = t - 256 if t > 127 else t
+            m.status2 = d[5]
+            m.status1 = d[6]
+            m.status0 = d[7]
+            m.last_seen = time.time()
+
+        # 4) 组级 0x08 → 更新组聚合 V/I
+        if ev.cmdCode == 0x08 and ev.deviceCode == 0x0B and ev.srcAddr == self._state.group_id:
+            d = ev.data
+            v_mV = (d[0] << 24) | (d[1] << 16) | (d[2] << 8) | d[3]
+            i_mA = (d[4] << 24) | (d[5] << 16) | (d[6] << 8) | d[7]
+            self._state.voltage = v_mV / 1000.0
+            self._state.total_current = i_mA / 1000.0

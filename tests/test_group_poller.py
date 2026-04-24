@@ -154,3 +154,83 @@ def test_discover_on_finish_receives_snapshot_not_live_reference(setup):
                                        dstAddr=0xF0, srcAddr=0x06,
                                        data=bytes(8)))
     assert captured == [{0x05}]   # 仍然 {0x05}，没有 0x06
+
+
+def test_rx_x9_updates_module_voltage_current_and_last_seen(setup, monkeypatch):
+    import REG1K0100A2, time
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+    poller.attach()
+
+    monkeypatch.setattr(time, 'time', lambda: 1234.5)
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0A, cmdCode=0x09,
+                              dstAddr=0xF0, srcAddr=0x00,
+                              data=bytes([0, 3, 0x0D, 0x40, 0, 0, 0x13, 0x88]))
+    poller._on_rx(ev)
+
+    m = state.modules[0x00]
+    assert m.voltage == pytest.approx(200.0)
+    assert m.current == pytest.approx(5.0)
+    assert m.last_seen == 1234.5
+
+    poller.detach()
+
+
+def test_rx_x4_updates_status_and_temperature(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+    poller.attach()
+
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0A, cmdCode=0x04,
+                              dstAddr=0xF0, srcAddr=0x01,
+                              data=bytes([0, 0, 1, 0x80, 0x1B, 0x40, 0x10, 0x80]))
+    poller._on_rx(ev)
+    m = state.modules[0x01]
+    assert m.group_id_reported == 1
+    assert m.status3 == 0x80
+    assert m.temperature == 0x1B  # 27 deg
+    assert m.status2 == 0x40
+    assert m.status1 == 0x10
+    assert m.status0 == 0x80
+
+    poller.detach()
+
+
+def test_rx_x4_other_group_evicts_module_from_state(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    state.group_id = 1
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+    poller.attach()
+
+    # 模块 0x00 报告自己组号 = 5（不再属于本组 1）
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0A, cmdCode=0x04,
+                              dstAddr=0xF0, srcAddr=0x00,
+                              data=bytes([0, 0, 5, 0, 25, 0, 0, 0]))
+    poller._on_rx(ev)
+    assert 0x00 not in state.modules
+
+    poller.detach()
+
+
+def test_rx_x8_group_updates_group_voltage_current(setup):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    state.group_id = 1
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+    poller.attach()
+
+    # 协议：0x08 组级回复 srcAddr = 组号
+    ev = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0B, cmdCode=0x08,
+                              dstAddr=0xF0, srcAddr=0x01,
+                              data=bytes([0, 3, 0x0D, 0x40, 0, 0, 0x13, 0x88]))
+    poller._on_rx(ev)
+    assert state.voltage == pytest.approx(200.0)
+    assert state.total_current == pytest.approx(5.0)
+
+    poller.detach()
