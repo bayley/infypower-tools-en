@@ -141,3 +141,9 @@ def test_group_state_module_count_reflects_dict():
     g.modules[0x00] = ModuleState(addr=0x00)
     g.modules[0x01] = ModuleState(addr=0x01)
     assert g.module_count == 2
+
+
+def test_group_state_is_off_at_exact_threshold_voltage():
+    from group_state import GroupState
+    g = GroupState(group_id=1, voltage=5.0)
+    assert g.is_on is False  # > not >=, exactly 5V 视为关机

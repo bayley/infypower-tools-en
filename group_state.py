@@ -64,7 +64,7 @@ class GroupState:
     group_id: int
     voltage: float = 0.0
     total_current: float = 0.0
-    modules: dict = field(default_factory=dict)
+    modules: dict[int, ModuleState] = field(default_factory=dict)
 
     @property
     def total_power(self) -> float:
