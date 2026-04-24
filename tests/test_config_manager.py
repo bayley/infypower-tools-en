@@ -82,3 +82,28 @@ def test_load_falls_back_when_old_config_missing_new_fields(tmp_path):
     assert result.device_name == "old"
     assert result.default_group == 1
     assert result.poll_interval_ms == 100
+
+
+def test_load_reads_new_fields_from_file(tmp_path):
+    import json
+    from config_manager import ConfigManager
+    cfg_path = tmp_path / "config.json"
+    cfg_path.write_text(json.dumps({
+        "default_group": 3,
+        "group_range_max": 8,
+        "module_pending_timeout_ms": 5000,
+        "module_offline_timeout_ms": 20000,
+        "module_gone_timeout_ms": 60000,
+        "poll_interval_ms": 200,
+        "group_discover_timeout_ms": 1200,
+    }), encoding='utf-8')
+    mgr = ConfigManager(config_path=str(cfg_path))
+    result = mgr.load()
+
+    assert result.default_group == 3
+    assert result.group_range_max == 8
+    assert result.module_pending_timeout_ms == 5000
+    assert result.module_offline_timeout_ms == 20000
+    assert result.module_gone_timeout_ms == 60000
+    assert result.poll_interval_ms == 200
+    assert result.group_discover_timeout_ms == 1200
