@@ -589,3 +589,26 @@ def REGx_CAN_ReceviceCallback(can_msg,canController_info:CANControllerInfo):
             canController_info.AllowedCurr = ((response.data[2] << 8) | response.data[3]) * 0.1
         else:
             pass
+
+
+# ─── 组级便捷包装 ────────────────────────────────────────
+def REGx_GroupSetOutput(group_id, volt, total_curr):
+    return REGx_SetSystemOutput(group_id, volt, total_curr,
+                                 device_code=REGx_DEVICE_CODE.GROUP)
+
+
+def REGx_GroupLaunch(group_id):
+    return REGx_Launch(group_id, device_code=REGx_DEVICE_CODE.GROUP)
+
+
+def REGx_GroupClose(group_id):
+    return REGx_CloseOutput(group_id, device_code=REGx_DEVICE_CODE.GROUP)
+
+
+def REGx_GroupReadVoltCurr(group_id):
+    return REGx_ReadSystemVoltCurrFixed(group_id,
+                                         device_code=REGx_DEVICE_CODE.GROUP)
+
+
+def REGx_GroupReadModulesStatus(group_id):
+    return REGx_ReadStateRequest(group_id, device_code=REGx_DEVICE_CODE.GROUP)
