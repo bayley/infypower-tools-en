@@ -223,9 +223,8 @@ class GroupHomeWidget(QFrame):
                     schedule_fn=lambda d, cb: QTimer.singleShot(d, cb),
                     poll_interval_ms=self._cfg.poll_interval_ms,
                 )
-                self._poller.attach()
-                # 立即对默认组发起一次发现
-                self._bind_group(self._cfg.default_group)
+                # 立即对当前下拉选择的组发起一次发现
+                self._bind_group(self.cbo_group.currentData())
             else:
                 self.btn_can.setChecked(False)
         else:
@@ -315,6 +314,7 @@ class GroupHomeWidget(QFrame):
         REGx_SetGreenLED(addr, new_state)
 
     def _refresh_aggregate_view(self):
+        now = time.time()
         s = self._state
         self.lbl_v.setText(f'{s.voltage:.1f} V' if s.module_count else '— —')
         self.lbl_i.setText(f'{s.total_current:.2f} A' if s.module_count else '— —')
@@ -329,14 +329,14 @@ class GroupHomeWidget(QFrame):
         self.sw_state.blockSignals(False)
         # 模块表
         self.tbl.update_modules(self._state, (
-            time.time(),
+            now,
             self._cfg.module_pending_timeout_ms,
             self._cfg.module_offline_timeout_ms,
             self._cfg.module_gone_timeout_ms,
         ))
         # 移除 gone 模块
         gone = [a for a, m in s.modules.items()
-                if m.lifecycle(time.time(),
+                if m.lifecycle(now,
                                self._cfg.module_pending_timeout_ms,
                                self._cfg.module_offline_timeout_ms,
                                self._cfg.module_gone_timeout_ms) == 'gone']
@@ -344,6 +344,14 @@ class GroupHomeWidget(QFrame):
             s.modules.pop(a, None)
         # 同步 chart dropdown
         self.chart.set_module_options(s.modules.keys())
+
+    def closeEvent(self, event):
+        from REG1K0100A2 import REGx_UnregisterListener
+        REGx_UnregisterListener(self._chart_listener)
+        if self._poller is not None:
+            self._poller.stop()
+            self._poller.detach()
+        super().closeEvent(event)
 
     def _chart_listener(self, ev):
         # 组级 0x08 → 整组曲线
