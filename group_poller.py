@@ -1,10 +1,14 @@
+import time
 from REG1K0100A2 import (
     REGx_GroupReadVoltCurr,
     REGx_ReadOutputRequest,         # 0x09
     REGx_ReadStateRequest,          # 0x04
     REGx_GroupReadModulesStatus,    # 0x04 + 0x0B
+    REGx_RegisterListener,
+    REGx_UnregisterListener,
     REGx_DEVICE_CODE,
 )
+from group_state import ModuleState
 
 
 class GroupPoller:
@@ -61,3 +65,33 @@ class GroupPoller:
     def _next_step_wrapper(self):
         if self._running:
             self._do_current_step()
+
+    def attach(self):
+        if not self._attached:
+            REGx_RegisterListener(self._on_rx)
+            self._attached = True
+
+    def detach(self):
+        if self._attached:
+            REGx_UnregisterListener(self._on_rx)
+            self._attached = False
+
+    def discover_modules(self, group_id: int, timeout_ms: int, on_finish):
+        self._state.group_id = group_id
+        self._discover_seen = set()
+        self.attach()  # idempotent
+        REGx_GroupReadModulesStatus(group_id)
+
+        def _finish():
+            for addr in self._discover_seen:
+                if addr not in self._state.modules:
+                    self._state.modules[addr] = ModuleState(addr=addr, last_seen=time.time())
+            on_finish(self._discover_seen)
+
+        self._sched(timeout_ms, _finish)
+
+    def _on_rx(self, ev):
+        # T9 scope: only handles group-level 0x04 discovery replies
+        # T10 will extend this to handle 0x09 / 0x04 / 0x08 for ongoing data updates
+        if ev.cmdCode == 0x04 and ev.deviceCode == 0x0B and ev.srcAddr != 0xF0:
+            self._discover_seen.add(ev.srcAddr)

@@ -72,3 +72,44 @@ def test_poller_stop_cancels_chain(setup):
     poller.stop()
     sch.step()
     assert len(can.sent) == 1  # 只有起步那一条
+
+
+def test_discover_collects_srcAddrs_into_state_modules(setup, monkeypatch):
+    import REG1K0100A2
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    state.modules.clear()  # 重置，模拟刚切组
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+
+    captured_finish = []
+    poller.discover_modules(group_id=1, timeout_ms=600,
+                             on_finish=lambda found: captured_finish.append(found))
+
+    # 验证发了组级 0x04
+    assert can.sent[-1][0] == 0x02C401F0
+
+    # 模拟 3 个模块回复（组级 0x04 回复，srcAddr = 模块地址）
+    for mod_addr in (0x00, 0x01, 0x02):
+        msg = REG1K0100A2.RxEvent(errorCode=0, deviceCode=0x0B, cmdCode=0x04,
+                                   dstAddr=0xF0, srcAddr=mod_addr,
+                                   data=bytes([0, 0, 1, 0, 25, 0, 0, 0]))
+        # 直接喂给 poller 的 listener
+        poller._on_rx(msg)
+
+    # 模拟 timeout 触发
+    sch.step()  # discover 的超时回调
+
+    assert sorted(state.modules.keys()) == [0x00, 0x01, 0x02]
+    assert captured_finish == [{0x00, 0x01, 0x02}]
+
+
+def test_discover_calls_on_finish_with_empty_set_on_timeout(setup):
+    from group_poller import GroupPoller
+    can, state, sch = setup
+    state.modules.clear()
+    poller = GroupPoller(state=state, schedule_fn=sch, poll_interval_ms=100)
+    captured = []
+    poller.discover_modules(group_id=2, timeout_ms=600,
+                             on_finish=lambda found: captured.append(found))
+    sch.step()
+    assert captured == [set()]
