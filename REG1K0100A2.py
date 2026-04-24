@@ -64,6 +64,29 @@ class CANControllerInfo:
 
 g_candevice = None
 g_log_callback = None  # 由 ManualWidget 注册，签名: (direction: str, identifier: int, data: bytes, desc: str)
+
+from dataclasses import dataclass
+
+@dataclass
+class RxEvent:
+    errorCode: int
+    deviceCode: int
+    cmdCode: int
+    dstAddr: int
+    srcAddr: int
+    data: bytes  # 8 字节
+
+
+_rx_listeners = []  # list of callable(RxEvent)
+
+def REGx_RegisterListener(cb):
+    if cb not in _rx_listeners:
+        _rx_listeners.append(cb)
+
+def REGx_UnregisterListener(cb):
+    if cb in _rx_listeners:
+        _rx_listeners.remove(cb)
+
 def REGx_Init(can_device):
     global g_candevice
     g_candevice = can_device
@@ -589,6 +612,21 @@ def REGx_CAN_ReceviceCallback(can_msg,canController_info:CANControllerInfo):
             canController_info.AllowedCurr = ((response.data[2] << 8) | response.data[3]) * 0.1
         else:
             pass
+
+    # 派发给注册的监听器（旧路径继续填 canController_info，新路径用 RxEvent）
+    ev = RxEvent(
+        errorCode=response.errorCode,
+        deviceCode=response.deviceCode,
+        cmdCode=response.cmdCode,
+        dstAddr=response.dstAddr,
+        srcAddr=response.srcAddr,
+        data=bytes(response.data),
+    )
+    for cb in list(_rx_listeners):
+        try:
+            cb(ev)
+        except Exception as e:
+            print(f"[REGx listener exception] {e}")
 
 
 # ─── 组级便捷包装 ────────────────────────────────────────
