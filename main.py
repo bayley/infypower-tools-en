@@ -120,7 +120,7 @@ class Window(FluentWindow):
 
     def contextMenuEvent(self, e) -> None:
         menu = AcrylicMenu(parent=self)
-        card = ProfileCard('resource/shoko.png', '刘沅林',
+        card = ProfileCard('resource/shoko.png', 'MisakaMikoto',
                            'liuyuanlins@outlook.com', menu)
         menu.addWidget(card, selectable=False)
         menu.addSeparator()
