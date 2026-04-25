@@ -39,7 +39,7 @@ class _ChartCanvas(QWidget):
 
     _LM  = 52   # 左边距（左Y轴刻度）
     _RM  = 52   # 右边距（右Y轴刻度）
-    _TM  = 14
+    _TM  = 28   # 上边距：容纳轴单位标注 + 顶部刻度文字，避免重叠
     _BM  = 30   # 下边距（X轴时间标注）
     _TICKS = 4  # 网格格数（5条线）
 
@@ -107,14 +107,14 @@ class _ChartCanvas(QWidget):
             painter.drawText(x - 22, py + ph + 5, 44, 20,
                              Qt.AlignCenter, lbl)
 
-        # ── 轴单位标注 ────────────────────────────────────────
+        # ── 轴单位标注（位于上边距顶部，避开顶端刻度文字）────
         font9b = QFont('Microsoft YaHei', 8)
         font9b.setBold(True)
         painter.setFont(font9b)
         painter.setPen(axis_l_c)
-        painter.drawText(0, tm - 2, lm, 14, Qt.AlignCenter, 'V / A')
+        painter.drawText(0, 2, lm, 12, Qt.AlignCenter, 'V / A')
         painter.setPen(axis_r_c)
-        painter.drawText(W - rm, tm - 2, rm, 14, Qt.AlignCenter, 'W')
+        painter.drawText(W - rm, 2, rm, 12, Qt.AlignCenter, 'W')
         painter.setFont(font8)
 
         # ── 剪裁到绘图区 ─────────────────────────────────────
