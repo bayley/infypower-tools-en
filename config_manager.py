@@ -10,6 +10,13 @@ class AppConfig:
     voltage_min: float = 150.0
     current_max: float = 100.0
     current_min: float = 0.0
+    default_group: int = 1
+    group_range_max: int = 15
+    module_pending_timeout_ms: int = 3000
+    module_offline_timeout_ms: int = 10000
+    module_gone_timeout_ms: int = 30000
+    poll_interval_ms: int = 100
+    group_discover_timeout_ms: int = 600
 
 
 class ConfigManager:
@@ -28,13 +35,20 @@ class ConfigManager:
         try:
             with open(self._path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            _default = AppConfig()
+            d = AppConfig()
             return AppConfig(
-                device_name=data.get("device_name", _default.device_name),
-                voltage_max=float(data.get("voltage_max", _default.voltage_max)),
-                voltage_min=float(data.get("voltage_min", _default.voltage_min)),
-                current_max=float(data.get("current_max", _default.current_max)),
-                current_min=float(data.get("current_min", _default.current_min)),
+                device_name=data.get("device_name", d.device_name),
+                voltage_max=float(data.get("voltage_max", d.voltage_max)),
+                voltage_min=float(data.get("voltage_min", d.voltage_min)),
+                current_max=float(data.get("current_max", d.current_max)),
+                current_min=float(data.get("current_min", d.current_min)),
+                default_group=int(data.get("default_group", d.default_group)),
+                group_range_max=int(data.get("group_range_max", d.group_range_max)),
+                module_pending_timeout_ms=int(data.get("module_pending_timeout_ms", d.module_pending_timeout_ms)),
+                module_offline_timeout_ms=int(data.get("module_offline_timeout_ms", d.module_offline_timeout_ms)),
+                module_gone_timeout_ms=int(data.get("module_gone_timeout_ms", d.module_gone_timeout_ms)),
+                poll_interval_ms=int(data.get("poll_interval_ms", d.poll_interval_ms)),
+                group_discover_timeout_ms=int(data.get("group_discover_timeout_ms", d.group_discover_timeout_ms)),
             )
         except (json.JSONDecodeError, KeyError, TypeError, ValueError):
             return AppConfig()

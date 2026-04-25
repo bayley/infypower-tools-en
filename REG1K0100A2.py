@@ -1,6 +1,8 @@
 import struct
 import time
+import traceback
 import HDL_CAN
+from dataclasses import dataclass
 
 REGx_INPUT_AC_VOLT_MAX = 530  # Unit: V
 REGx_INPUT_AC_VOLT_MIN = 260  # Unit: V
@@ -64,6 +66,27 @@ class CANControllerInfo:
 
 g_candevice = None
 g_log_callback = None  # 由 ManualWidget 注册，签名: (direction: str, identifier: int, data: bytes, desc: str)
+
+@dataclass
+class RxEvent:
+    errorCode: int
+    deviceCode: int
+    cmdCode: int
+    dstAddr: int
+    srcAddr: int
+    data: bytes  # 8 字节
+
+
+_rx_listeners = []  # list of callable(RxEvent)
+
+def REGx_RegisterListener(cb):
+    if cb not in _rx_listeners:
+        _rx_listeners.append(cb)
+
+def REGx_UnregisterListener(cb):
+    if cb in _rx_listeners:
+        _rx_listeners.remove(cb)
+
 def REGx_Init(can_device):
     global g_candevice
     g_candevice = can_device
@@ -120,11 +143,11 @@ def REGx_MsgSend(msg):
     return g_candevice.send_data_ch1(Identifier, TxData)
 
 
-def REGx_ReadStateRequest(dstAddr):
+def REGx_ReadStateRequest(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
 
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x04
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -135,11 +158,11 @@ def REGx_ReadStateRequest(dstAddr):
     return 0
 
 
-def REGx_ReadInputRequest(dstAddr):
+def REGx_ReadInputRequest(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
 
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x06
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -150,11 +173,11 @@ def REGx_ReadInputRequest(dstAddr):
     return 0
 
 
-def REGx_ReadOutputRequest(dstAddr):
+def REGx_ReadOutputRequest(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
 
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x09
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -168,11 +191,11 @@ def REGx_ReadOutputRequest(dstAddr):
 
 # 注意：此函数与 REGx_ReadModuleParams 发送相同的 0x0A 命令（读取模块参数：最大电压/最小电压/最大电流/额定功率）
 # 保留此函数名以保持向后兼容性
-def REGx_ReadOutputSetRequest(dstAddr):
+def REGx_ReadOutputSetRequest(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
 
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x0A
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -182,10 +205,10 @@ def REGx_ReadOutputSetRequest(dstAddr):
 
     return 0
 
-def REGx_ReadSystemVoltCurrFloat(dstAddr):
+def REGx_ReadSystemVoltCurrFloat(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x01
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -194,10 +217,10 @@ def REGx_ReadSystemVoltCurrFloat(dstAddr):
     return 0
 
 
-def REGx_ReadModuleCount(dstAddr):
+def REGx_ReadModuleCount(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x02
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -206,10 +229,10 @@ def REGx_ReadModuleCount(dstAddr):
     return 0
 
 
-def REGx_ReadModuleVoltCurrFloat(dstAddr):
+def REGx_ReadModuleVoltCurrFloat(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x03
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -218,10 +241,10 @@ def REGx_ReadModuleVoltCurrFloat(dstAddr):
     return 0
 
 
-def REGx_ReadSystemVoltCurrFixed(dstAddr):
+def REGx_ReadSystemVoltCurrFixed(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x08
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -230,10 +253,10 @@ def REGx_ReadSystemVoltCurrFixed(dstAddr):
     return 0
 
 
-def REGx_ReadModuleParams(dstAddr):
+def REGx_ReadModuleParams(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x0A
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -242,10 +265,10 @@ def REGx_ReadModuleParams(dstAddr):
     return 0
 
 
-def REGx_ReadBarcode(dstAddr):
+def REGx_ReadBarcode(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x0B
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -254,10 +277,10 @@ def REGx_ReadBarcode(dstAddr):
     return 0
 
 
-def REGx_ReadExternalVoltCurr(dstAddr):
+def REGx_ReadExternalVoltCurr(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x0C
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -266,7 +289,7 @@ def REGx_ReadExternalVoltCurr(dstAddr):
     return 0
 
 
-def REGx_SetOutput(dstAddr, volt, curr):
+def REGx_SetOutput(dstAddr, volt, curr, device_code=REGx_DEVICE_CODE.SINGLE):
     # Clamp voltage and current within their respective bounds
     volt = max(REGx_OUTPUT_DC_VOLT_MIN, min(volt, REGx_OUTPUT_DC_VOLT_MAX))
     curr = max(REGx_OUTPUT_DC_CURR_MIN, min(curr, REGx_OUTPUT_DC_CURR_MAX))
@@ -274,7 +297,7 @@ def REGx_SetOutput(dstAddr, volt, curr):
     request = REGx_Msg_t()
 
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x1C
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -298,11 +321,11 @@ def REGx_SetOutput(dstAddr, volt, curr):
     return 0
 
 
-def REGx_Launch(dstAddr):
+def REGx_Launch(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
 
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x1A
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -312,7 +335,7 @@ def REGx_Launch(dstAddr):
 
     return 0
 
-def REGx_CloseOutput(dstAddr):
+def REGx_CloseOutput(dstAddr, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
 
     REGx_CMD_CODE_LAUNCH_SET_ON = 0x00
@@ -320,7 +343,7 @@ def REGx_CloseOutput(dstAddr):
     REGx_CMD_CODE_LAUNCH_SET = 0x1A
 
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = REGx_CMD_CODE_LAUNCH_SET
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -331,10 +354,10 @@ def REGx_CloseOutput(dstAddr):
     return 0
 
 
-def REGx_SetComprehensive(dstAddr, sub_cmd_hi: int, sub_cmd_lo: int, value: int):
+def REGx_SetComprehensive(dstAddr, sub_cmd_hi: int, sub_cmd_lo: int, value: int, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x0F
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -347,10 +370,10 @@ def REGx_SetComprehensive(dstAddr, sub_cmd_hi: int, sub_cmd_lo: int, value: int)
     return 0
 
 
-def REGx_SetWalkIn(dstAddr, enable: bool):
+def REGx_SetWalkIn(dstAddr, enable: bool, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x13
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -360,10 +383,10 @@ def REGx_SetWalkIn(dstAddr, enable: bool):
     return 0
 
 
-def REGx_SetGreenLED(dstAddr, blink: bool):
+def REGx_SetGreenLED(dstAddr, blink: bool, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x14
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -373,10 +396,10 @@ def REGx_SetGreenLED(dstAddr, blink: bool):
     return 0
 
 
-def REGx_SetGroupNumber(dstAddr, group: int):
+def REGx_SetGroupNumber(dstAddr, group: int, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x16
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -386,10 +409,10 @@ def REGx_SetGroupNumber(dstAddr, group: int):
     return 0
 
 
-def REGx_SetSleep(dstAddr, sleep: bool):
+def REGx_SetSleep(dstAddr, sleep: bool, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x19
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -399,12 +422,12 @@ def REGx_SetSleep(dstAddr, sleep: bool):
     return 0
 
 
-def REGx_SetSystemOutput(dstAddr, volt: float, total_curr: float):
+def REGx_SetSystemOutput(dstAddr, volt: float, total_curr: float, device_code=REGx_DEVICE_CODE.SINGLE):
     volt = max(REGx_OUTPUT_DC_VOLT_MIN, min(volt, REGx_OUTPUT_DC_VOLT_MAX))
     total_curr = max(0.0, total_curr)  # 系统总电流不设上限（多模块并联可超过单模块最大值）
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x1B
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -423,10 +446,10 @@ def REGx_SetSystemOutput(dstAddr, volt: float, total_curr: float):
     return 0
 
 
-def REGx_SetAddressMode(dstAddr, dip_switch: bool):
+def REGx_SetAddressMode(dstAddr, dip_switch: bool, device_code=REGx_DEVICE_CODE.SINGLE):
     request = REGx_Msg_t()
     request.errorCode = REGx_ERROR_CODE.NORMAL
-    request.deviceCode = REGx_DEVICE_CODE.SINGLE
+    request.deviceCode = device_code
     request.cmdCode = 0x1F
     request.dstAddr = dstAddr
     request.srcAddr = REGx_MASTER_ADDR
@@ -436,11 +459,11 @@ def REGx_SetAddressMode(dstAddr, dip_switch: bool):
     return 0
 
 
-def REGx_SetLiquidCoolTemp(dstAddr, tin: int, tout: int, tamb: int):
+def REGx_SetLiquidCoolTemp(dstAddr, tin: int, tout: int, tamb: int, device_code=REGx_DEVICE_CODE.SINGLE):
     # 协议 0x0F sub_cmd 0x13 0x01：进水口/出水口/环温（单字节有符号数，& 0xFF 转补码）
     req = REGx_Msg_t()
     req.errorCode = REGx_ERROR_CODE.NORMAL
-    req.deviceCode = REGx_DEVICE_CODE.SINGLE
+    req.deviceCode = device_code
     req.cmdCode = 0x0F
     req.dstAddr = dstAddr
     req.srcAddr = REGx_MASTER_ADDR
@@ -589,3 +612,43 @@ def REGx_CAN_ReceviceCallback(can_msg,canController_info:CANControllerInfo):
             canController_info.AllowedCurr = ((response.data[2] << 8) | response.data[3]) * 0.1
         else:
             pass
+
+    # 派发给注册的监听器（旧路径继续填 canController_info，新路径用 RxEvent）
+    ev = RxEvent(
+        errorCode=response.errorCode,
+        deviceCode=response.deviceCode,
+        cmdCode=response.cmdCode,
+        dstAddr=response.dstAddr,
+        srcAddr=response.srcAddr,
+        data=bytes(response.data),
+    )
+    # snapshot: allows listeners to unregister during dispatch
+    for cb in list(_rx_listeners):
+        try:
+            cb(ev)
+        except Exception as e:
+            print(f"[REGx listener exception] {e}")
+            traceback.print_exc()
+
+
+# ─── 组级便捷包装 ────────────────────────────────────────
+def REGx_GroupSetOutput(group_id, volt, total_curr):
+    return REGx_SetSystemOutput(group_id, volt, total_curr,
+                                 device_code=REGx_DEVICE_CODE.GROUP)
+
+
+def REGx_GroupLaunch(group_id):
+    return REGx_Launch(group_id, device_code=REGx_DEVICE_CODE.GROUP)
+
+
+def REGx_GroupClose(group_id):
+    return REGx_CloseOutput(group_id, device_code=REGx_DEVICE_CODE.GROUP)
+
+
+def REGx_GroupReadVoltCurr(group_id):
+    return REGx_ReadSystemVoltCurrFixed(group_id,
+                                         device_code=REGx_DEVICE_CODE.GROUP)
+
+
+def REGx_GroupReadModulesStatus(group_id):
+    return REGx_ReadStateRequest(group_id, device_code=REGx_DEVICE_CODE.GROUP)

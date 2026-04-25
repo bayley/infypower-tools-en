@@ -13,4 +13,4 @@ __pycache__/*
 */__pycache__/*
 .build_cache/*
 release/*
-build_sign.pfx
+*.pfx
