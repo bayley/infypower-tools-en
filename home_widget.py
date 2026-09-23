@@ -244,6 +244,16 @@ class GroupHomeWidget(QFrame):
                 self._bind_group(self.cbo_group.currentData())
             else:
                 self.btn_can.setChecked(False)
+                InfoBar.error(
+                    title='Could not open CAN',
+                    content=getattr(self._can, 'last_error', '') or
+                            'Check that the adapter is plugged in and its driver is installed.',
+                    orient=Qt.Horizontal,
+                    isClosable=True,
+                    position=InfoBarPosition.TOP_RIGHT,
+                    duration=8000,
+                    parent=self,
+                )
         else:
             if self._poller is not None:
                 self._poller.stop()

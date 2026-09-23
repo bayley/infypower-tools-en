@@ -75,6 +75,7 @@ python -m nuitka ^
     --include-package=qframelesswindow ^
     --include-package=qframelesswindow.titlebar ^
     --include-package-data=qframelesswindow ^
+    --include-package=can ^
     --include-data-files=ControlCAN.dll=ControlCAN.dll ^
     --include-data-dir=img=img ^
     --include-data-dir=resource=resource ^

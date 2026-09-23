@@ -3,3 +3,4 @@ PyQt5-sip==12.18.0
 PyQt-Fluent-Widgets[full]==1.8.6
 PyQt5-Frameless-Window==0.7.3
 pywin32==306
+python-can>=4.3,<5

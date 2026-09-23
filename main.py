@@ -12,7 +12,7 @@ from qfluentwidgets import (Action, AvatarWidget, BodyLabel, CaptionLabel,
 from qfluentwidgets.components.material import AcrylicMenu
 
 from config_manager import AppConfig, ConfigManager
-from HDL_CAN import CANDev
+from can_backend import create_can_device
 from home_widget import GroupHomeWidget
 from manual_widget import ManualWidget
 from REG1K0100A2 import CANControllerInfo, REGx_Init
@@ -60,7 +60,7 @@ class Window(FluentWindow):
 
         self._config = ConfigManager().load()
 
-        self.can_device = CANDev()
+        self.can_device = create_can_device(self._config)
         REGx_Init(self.can_device)
         self.canController_info = CANControllerInfo()  # home_widget 和 manual_widget 共享同一实例
 

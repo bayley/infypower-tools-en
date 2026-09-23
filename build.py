@@ -323,6 +323,8 @@ def build(mode: str):
         '--include-package=qframelesswindow',
         '--include-package=qframelesswindow.titlebar',
         '--include-package-data=qframelesswindow',
+        # python-can loads the PCAN backend dynamically; include the whole package
+        '--include-package=can',
 
         # ── Data files bundled into the package ───────────────
         # CAN hardware driver DLL

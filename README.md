@@ -30,6 +30,7 @@ A Windows desktop console for **INFYPOWER REG1K0100A2** charging modules (1000V 
 - **Manual command panel**: send any protocol command `0x01`–`0x1F` with auto-generated parameter dialogs
 - **Dual CAN channels**: CAN1 / CAN2 activity badges + chained RX decoding (0x09 system V/I, 0x04 module status, 0x08 system fixed-point V/I, etc.)
 - **Configurable**: `config.json` controls V/I ranges, max group count, poll interval, module timeouts
+- **Two adapter families**: PEAK PCAN-USB (via python-can / PCAN-Basic) or ZLG USBCAN, auto-detected
 
 ### Screenshots
 
@@ -39,9 +40,27 @@ A Windows desktop console for **INFYPOWER REG1K0100A2** charging modules (1000V 
 
 ### Hardware
 
-- ZLG USBCAN-2A / USBCAN-II adapter (uses the bundled `ControlCAN.dll`)
+- A CAN adapter, either:
+  - **PEAK PCAN-USB** (including the isolated variant), or any other PCAN interface supported by PCAN-Basic, or
+  - **ZLG USBCAN-2A / USBCAN-II** (uses the bundled `ControlCAN.dll`)
 - One or more INFYPOWER **REG1K0100A2** modules (other INFYPOWER models implementing CAN protocol V1.09 should work in theory, untested)
 - Windows 10 / 11, Python 3.10+
+
+#### Using a PCAN adapter
+
+1. Install the PEAK device driver package from https://www.peak-system.com/quick/DrvSetup and tick **PCAN-Basic API** in the installer (this provides `PCANBasic.dll`).
+2. `pip install -r requirements.txt` (pulls in `python-can`).
+3. Start the app. With `can_backend` left at `"auto"` in `config.json`, a plugged-in PCAN adapter is picked up automatically; otherwise the ZLG driver is used.
+
+`config.json` keys:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `can_backend` | `"auto"` | `"auto"`, `"pcan"` or `"zlg"` |
+| `pcan_channel` | `"PCAN_USBBUS1"` | Which PCAN channel to open (`PCAN_USBBUS2`, ... for a second adapter) |
+| `can_bitrate` | `125000` | Bus speed. The protocol default is 125 kbps. |
+
+A PCAN-USB adapter has a single channel, which the app maps to CAN1. The CAN2 badge stays idle.
 
 ### Install & Run
 
@@ -74,6 +93,8 @@ The full CAN protocol spec is in [`doc/充电模块CAN通讯协议V1.09 20240510
 ├── group_poller.py        # Chained scheduler for group- and module-level polling with RX decoding
 ├── REG1K0100A2.py         # Protocol layer: send helpers + RxEvent + listeners
 ├── HDL_CAN.py             # ctypes wrapper around ZLG ControlCAN.dll
+├── pcan_dev.py            # PEAK PCAN backend (python-can / PCAN-Basic)
+├── can_backend.py         # Picks ZLG or PCAN from config.json
 ├── config_manager.py      # AppConfig dataclass + JSON loader
 ├── config.json            # User-editable configuration
 ├── tests/                 # pytest unit tests (with MockCAN fixture)
@@ -123,6 +144,7 @@ Tests don't need USBCAN hardware — they use a `MockCAN` fixture in `tests/conf
 - **手动命令面板**：协议表 `0x01`–`0x1F` 全命令任发，参数对话框按命令定义自动生成
 - **双 CAN 通道**：CAN1 / CAN2 活动徽章 + 链式 RX 解码（0x09 系统电压电流、0x04 模块状态、0x08 系统定点电压电流 等）
 - **可配置**：`config.json` 调电压/电流量程、组数上限、轮询周期、模块超时阈值
+- **两类适配器**：PEAK PCAN-USB（python-can / PCAN-Basic）或周立功 USBCAN，自动识别
 
 ### 截图
 
@@ -132,9 +154,27 @@ Tests don't need USBCAN hardware — they use a `MockCAN` fixture in `tests/conf
 
 ### 硬件要求
 
-- 周立功 USBCAN-2A / USBCAN-II 系列板卡（依赖随包附带的 `ControlCAN.dll`）
+- CAN 适配器，二选一：
+  - **PEAK PCAN-USB**（含隔离版）或其它 PCAN-Basic 支持的 PCAN 接口卡
+  - **周立功 USBCAN-2A / USBCAN-II** 系列板卡（依赖随包附带的 `ControlCAN.dll`）
 - 一台或多台英飞源 **REG1K0100A2** 充电模块（其它沿用同一 CAN 协议 V1.09 的英飞源型号也理论可用，未实测）
 - Windows 10 / 11，Python 3.10+
+
+#### 使用 PCAN 适配器
+
+1. 从 https://www.peak-system.com/quick/DrvSetup 安装 PEAK 驱动包，安装时勾选 **PCAN-Basic API**（提供 `PCANBasic.dll`）。
+2. `pip install -r requirements.txt`（会安装 `python-can`）。
+3. 启动程序。`config.json` 中 `can_backend` 保持 `"auto"` 时，插上 PCAN 会自动识别，否则回退到周立功驱动。
+
+`config.json` 配置项：
+
+| 键 | 默认值 | 含义 |
+|---|---|---|
+| `can_backend` | `"auto"` | `"auto"`、`"pcan"` 或 `"zlg"` |
+| `pcan_channel` | `"PCAN_USBBUS1"` | 打开哪个 PCAN 通道（第二块卡用 `PCAN_USBBUS2` 等） |
+| `can_bitrate` | `125000` | 总线速率，协议默认 125 kbps |
+
+PCAN-USB 只有一个通道，程序映射为 CAN1，CAN2 徽章保持空闲。
 
 ### 安装运行
 
@@ -167,6 +207,8 @@ python main.py
 ├── group_poller.py        # 链式调度组级 + 模块级命令的 RX 解码轮询器
 ├── REG1K0100A2.py         # 协议层：发送 helper + RxEvent + listener
 ├── HDL_CAN.py             # 周立功 ControlCAN.dll 的 ctypes 封装
+├── pcan_dev.py            # PEAK PCAN 后端（python-can / PCAN-Basic）
+├── can_backend.py         # 按 config.json 选择周立功或 PCAN 后端
 ├── config_manager.py      # AppConfig 数据类 + JSON 加载
 ├── config.json            # 用户可编辑配置
 ├── tests/                 # pytest 单测（含 MockCAN fixture）

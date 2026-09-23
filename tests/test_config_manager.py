@@ -107,3 +107,25 @@ def test_load_reads_new_fields_from_file(tmp_path):
     assert result.module_gone_timeout_ms == 60000
     assert result.poll_interval_ms == 200
     assert result.group_discover_timeout_ms == 1200
+
+
+def test_can_backend_defaults(tmp_path):
+    from config_manager import ConfigManager
+    result = ConfigManager(config_path=str(tmp_path / "config.json")).load()
+    assert result.can_backend == "auto"
+    assert result.pcan_channel == "PCAN_USBBUS1"
+    assert result.can_bitrate == 125000
+
+
+def test_can_backend_read_from_file(tmp_path):
+    from config_manager import ConfigManager
+    cfg_path = tmp_path / "config.json"
+    cfg_path.write_text(json.dumps({
+        "can_backend": "pcan",
+        "pcan_channel": "PCAN_USBBUS2",
+        "can_bitrate": 250000,
+    }), encoding='utf-8')
+    result = ConfigManager(config_path=str(cfg_path)).load()
+    assert result.can_backend == "pcan"
+    assert result.pcan_channel == "PCAN_USBBUS2"
+    assert result.can_bitrate == 250000

@@ -17,6 +17,9 @@ class AppConfig:
     module_gone_timeout_ms: int = 30000
     poll_interval_ms: int = 100
     group_discover_timeout_ms: int = 600
+    can_backend: str = "auto"          # "auto" | "zlg" | "pcan"
+    pcan_channel: str = "PCAN_USBBUS1"
+    can_bitrate: int = 125000
 
 
 class ConfigManager:
@@ -49,6 +52,9 @@ class ConfigManager:
                 module_gone_timeout_ms=int(data.get("module_gone_timeout_ms", d.module_gone_timeout_ms)),
                 poll_interval_ms=int(data.get("poll_interval_ms", d.poll_interval_ms)),
                 group_discover_timeout_ms=int(data.get("group_discover_timeout_ms", d.group_discover_timeout_ms)),
+                can_backend=str(data.get("can_backend", d.can_backend)),
+                pcan_channel=str(data.get("pcan_channel", d.pcan_channel)),
+                can_bitrate=int(data.get("can_bitrate", d.can_bitrate)),
             )
         except (json.JSONDecodeError, KeyError, TypeError, ValueError):
             return AppConfig()
