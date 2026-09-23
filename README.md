@@ -2,20 +2,114 @@
 
 # infypower-tools
 
-[简体中文](#简体中文) · [English](#english)
+[English](#english) · [简体中文](#简体中文)
 
-[![License](https://img.shields.io/github/license/MisakaMikoto128/infypower-tools)](LICENSE)
-[![CI](https://github.com/MisakaMikoto128/infypower-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/MisakaMikoto128/infypower-tools/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/bayley/infypower-tools-en)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![UI](https://img.shields.io/badge/UI-PyQt%E2%80%91Fluent%E2%80%91Widgets-orange)
-[![Stars](https://img.shields.io/github/stars/MisakaMikoto128/infypower-tools?style=social)](https://github.com/MisakaMikoto128/infypower-tools/stargazers)
+[![Stars](https://img.shields.io/github/stars/bayley/infypower-tools-en?style=social)](https://github.com/bayley/infypower-tools-en/stargazers)
 
 </div>
 
 ---
 
+## English
+
+> English-UI edition of [MisakaMikoto128/infypower-tools](https://github.com/MisakaMikoto128/infypower-tools). All user-facing strings have been translated to English; the protocol, hardware and build flow are unchanged.
+
+![home](doc/screenshots/home.png)
+
+A Windows desktop console for **INFYPOWER REG1K0100A2** charging modules (1000V / 100A / 30kW), built with PyQt-Fluent-Widgets. Implements the vendor's published **CAN protocol V1.09**, with multi-group control, per-module monitoring, real-time charts, and a full-protocol manual command console.
+
+### Features
+
+- **Group-level control**: switch between up to 15 groups; one-click power on/off, set output V/I, Walk-In enable, green LED blink, module sleep
+- **Module table**: live per-module V/I/alarms/sleep/LED state with a 4-state lifecycle (pending / online / offline / gone)
+- **Real-time chart**: group aggregate ↔ single-module view, dynamic N-axis range, auto-reset on target module disappearance
+- **Manual command panel**: send any protocol command `0x01`–`0x1F` with auto-generated parameter dialogs
+- **Dual CAN channels**: CAN1 / CAN2 activity badges + chained RX decoding (0x09 system V/I, 0x04 module status, 0x08 system fixed-point V/I, etc.)
+- **Configurable**: `config.json` controls V/I ranges, max group count, poll interval, module timeouts
+
+### Screenshots
+
+| Home (multi-group aggregate) | Manual console | Real-time chart |
+|---|---|---|
+| ![home](doc/screenshots/home.png) | ![manual](doc/screenshots/manual.png) | ![chart](doc/screenshots/chart.png) |
+
+### Hardware
+
+- ZLG USBCAN-2A / USBCAN-II adapter (uses the bundled `ControlCAN.dll`)
+- One or more INFYPOWER **REG1K0100A2** modules (other INFYPOWER models implementing CAN protocol V1.09 should work in theory, untested)
+- Windows 10 / 11, Python 3.10+
+
+### Install & Run
+
+```bash
+pip install -r requirements.txt
+python main.py
+```
+
+### Build
+
+The repo ships several packaging scripts:
+- `build_nuitka.bat` / `build_nuitka_debug.bat` — Nuitka compile
+- `python build.py` — custom build flow
+- `make_package.bat` — legacy PyInstaller flow (main.spec)
+
+### Protocol Reference
+
+The full CAN protocol spec is in [`doc/充电模块CAN通讯协议V1.09 20240510.md`](doc/充电模块CAN通讯协议V1.09%2020240510.md) (PDF in the same folder). The spec is only available in Chinese from the vendor.
+
+### Project Structure
+
+```
+.
+├── main.py                # App entry point (FluentWindow + system tray)
+├── home_widget.py         # Home: multi-group aggregate view + module table + real-time chart
+├── manual_widget.py       # Manual command console (protocol 0x01–0x1F)
+├── chart_widget.py        # RealtimeChart (whole-group / single-module switch)
+├── module_table.py        # Per-group module table + custom delegates
+├── group_state.py         # GroupState / ModuleState dataclasses + 4-state lifecycle
+├── group_poller.py        # Chained scheduler for group- and module-level polling with RX decoding
+├── REG1K0100A2.py         # Protocol layer: send helpers + RxEvent + listeners
+├── HDL_CAN.py             # ctypes wrapper around ZLG ControlCAN.dll
+├── config_manager.py      # AppConfig dataclass + JSON loader
+├── config.json            # User-editable configuration
+├── tests/                 # pytest unit tests (with MockCAN fixture)
+├── doc/                   # Protocol PDF/MD + screenshots
+└── requirements*.txt
+```
+
+### Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q
+```
+
+Tests don't need USBCAN hardware — they use a `MockCAN` fixture in `tests/conftest.py`.
+
+### License
+
+[GPL-3.0](LICENSE)
+
+### Third-party Notice
+
+`ControlCAN.dll` is © **Guangzhou ZLG (Zhiyuan Electronics)**. It is bundled here purely as a convenience for one-click reproducibility, NOT as a redistribution license. If the rights holder objects, please open an issue or email the author and it will be removed immediately. Readers may also download the driver from ZLG's official website.
+
+### Acknowledgements
+
+- [MisakaMikoto128/infypower-tools](https://github.com/MisakaMikoto128/infypower-tools) — the original project this edition is translated from
+- [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) — beautiful Fluent Design Qt widgets
+- ZLG ControlCAN — USBCAN device SDK
+- INFYPOWER — public CAN protocol spec
+
+---
+
 ## 简体中文
+
+> 本仓库是 [MisakaMikoto128/infypower-tools](https://github.com/MisakaMikoto128/infypower-tools) 的英文界面版本。界面文字已全部翻译为英文，协议、硬件与打包流程保持不变。
 
 ![home](doc/screenshots/home.png)
 
@@ -99,75 +193,7 @@ pytest -q
 
 ### 鸣谢
 
+- [MisakaMikoto128/infypower-tools](https://github.com/MisakaMikoto128/infypower-tools) — 本版本翻译自的原始项目
 - [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) — 漂亮的 Fluent Design Qt 组件库
 - 周立功 ControlCAN — USBCAN 设备 SDK
 - 英飞源 INFYPOWER — 公开的 CAN 协议规范
-
----
-
-## English
-
-![home](doc/screenshots/home.png)
-
-A Windows desktop console for **INFYPOWER REG1K0100A2** charging modules (1000V / 100A / 30kW), built with PyQt-Fluent-Widgets. Implements the vendor's published **CAN protocol V1.09**, with multi-group control, per-module monitoring, real-time charts, and a full-protocol manual command console.
-
-### Features
-
-- **Group-level control**: switch between up to 15 groups; one-click power on/off, set output V/I, Walk-In enable, green LED blink, module sleep
-- **Module table**: live per-module V/I/alarms/sleep/LED state with a 4-state lifecycle (pending / online / offline / gone)
-- **Real-time chart**: group aggregate ↔ single-module view, dynamic N-axis range, auto-reset on target module disappearance
-- **Manual command panel**: send any protocol command `0x01`–`0x1F` with auto-generated parameter dialogs
-- **Dual CAN channels**: CAN1 / CAN2 activity badges + chained RX decoding (0x09 system V/I, 0x04 module status, 0x08 system fixed-point V/I, etc.)
-- **Configurable**: `config.json` controls V/I ranges, max group count, poll interval, module timeouts
-
-### Screenshots
-
-| Home (multi-group aggregate) | Manual console | Real-time chart |
-|---|---|---|
-| ![home](doc/screenshots/home.png) | ![manual](doc/screenshots/manual.png) | ![chart](doc/screenshots/chart.png) |
-
-### Hardware
-
-- ZLG USBCAN-2A / USBCAN-II adapter (uses the bundled `ControlCAN.dll`)
-- One or more INFYPOWER **REG1K0100A2** modules (other INFYPOWER models implementing CAN protocol V1.09 should work in theory, untested)
-- Windows 10 / 11, Python 3.10+
-
-### Install & Run
-
-```bash
-pip install -r requirements.txt
-python main.py
-```
-
-### Build
-
-- `build_nuitka.bat` / `build_nuitka_debug.bat` — Nuitka compile
-- `python build.py` — custom build flow
-- `make_package.bat` — legacy PyInstaller flow
-
-### Protocol Reference
-
-See [`doc/充电模块CAN通讯协议V1.09 20240510.md`](doc/充电模块CAN通讯协议V1.09%2020240510.md) (PDF in the same folder).
-
-### Tests
-
-```bash
-pip install -r requirements-dev.txt
-pytest -q
-```
-
-Tests don't need USBCAN hardware — they use a `MockCAN` fixture in `tests/conftest.py`.
-
-### License
-
-[GPL-3.0](LICENSE)
-
-### Third-party Notice
-
-`ControlCAN.dll` is © **Guangzhou ZLG (Zhiyuan Electronics)**. It is bundled here purely as a convenience for one-click reproducibility, NOT as a redistribution license. If the rights holder objects, please open an issue or email the author and it will be removed immediately. Readers may also download the driver from ZLG's official website.
-
-### Acknowledgements
-
-- [PyQt-Fluent-Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets) — beautiful Fluent Design Qt widgets
-- ZLG ControlCAN — USBCAN device SDK
-- INFYPOWER — public CAN protocol spec
