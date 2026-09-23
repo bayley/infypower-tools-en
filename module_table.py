@@ -38,7 +38,7 @@ class _CheckDelegate(QStyledItemDelegate):
         return QRect(x, y, size, size)
 
 
-COLS = ['地址', '电压', '电流', '温度℃', '💤', '💡']
+COLS = ['Address', 'Voltage', 'Current', 'Temp ℃', '💤', '💡']
 COL_ADDR, COL_V, COL_I, COL_T, COL_SLEEP, COL_LED = range(6)
 
 

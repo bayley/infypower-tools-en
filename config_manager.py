@@ -5,7 +5,7 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class AppConfig:
-    device_name: str = "REG1K0100A2 充电模块"
+    device_name: str = "REG1K0100A2 Charging Module"
     voltage_max: float = 1000.0
     voltage_min: float = 150.0
     current_max: float = 100.0

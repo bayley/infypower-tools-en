@@ -185,7 +185,7 @@ class _ChartCanvas(QWidget):
             painter.setFont(font_tag)
             painter.setPen(QColor(255, 255, 255))
             painter.drawText(int(tag_x), int(tag_y), tag_w, tag_h,
-                             Qt.AlignCenter, '⏸  已暂停')
+                             Qt.AlignCenter, '⏸  Paused')
 
         painter.end()
 
@@ -323,9 +323,9 @@ class RealtimeChart(QFrame):
         self._module_count = len(addrs_sorted)
         self._target_combo.blockSignals(True)
         self._target_combo.clear()
-        self._target_combo.addItem('整组')
+        self._target_combo.addItem('Whole group')
         for a in addrs_sorted:
-            self._target_combo.addItem(f'模块 0x{a:02X}')
+            self._target_combo.addItem(f'Module 0x{a:02X}')
         idx = self._target_combo.findText(cur)
         if idx >= 0:
             self._target_combo.setCurrentIndex(idx)
@@ -352,7 +352,7 @@ class RealtimeChart(QFrame):
             self.set_target('group')
             return
         text = self._target_combo.currentText()
-        # '模块 0x05' → 5
+        # 'Module 0x05' → 5
         try:
             addr = int(text.split('0x')[1], 16)
             self.set_target(addr)
@@ -367,18 +367,18 @@ class RealtimeChart(QFrame):
 
         # 标题行
         hdr = QHBoxLayout()
-        hdr.addWidget(StrongBodyLabel('实时曲线'))
+        hdr.addWidget(StrongBodyLabel('Real-time Chart'))
         hdr.addStretch()
-        hdr.addWidget(CaptionLabel(f'时间窗口 {self.WINDOW_SECONDS} s'))
+        hdr.addWidget(CaptionLabel(f'Window {self.WINDOW_SECONDS} s'))
 
         self._target_combo = ComboBox()
-        self._target_combo.addItem('整组')
+        self._target_combo.addItem('Whole group')
         self._target_combo.setMinimumWidth(110)
         self._target_combo.currentIndexChanged.connect(self._on_target_changed)
         hdr.addWidget(self._target_combo)
 
         self._pause_btn = ToolButton(FIF.PAUSE, self)
-        self._pause_btn.setToolTip('暂停 / 恢复')
+        self._pause_btn.setToolTip('Pause / Resume')
         self._pause_btn.setFixedSize(28, 28)
         self._pause_btn.clicked.connect(self._toggle_pause)
         hdr.addWidget(self._pause_btn)
@@ -386,9 +386,9 @@ class RealtimeChart(QFrame):
         vbox.addLayout(hdr)
 
         # 图例行
-        self._volt_leg = _LegendItem('电压', '（左轴）', _VOLT_HEX, is_area=False)
-        self._curr_leg = _LegendItem('电流', '（左轴）', _CURR_HEX, is_area=False)
-        self._pwr_leg  = _LegendItem('功率', '（右轴）', _PWR_HEX,  is_area=True)
+        self._volt_leg = _LegendItem('Voltage', '(left)', _VOLT_HEX, is_area=False)
+        self._curr_leg = _LegendItem('Current', '(left)', _CURR_HEX, is_area=False)
+        self._pwr_leg  = _LegendItem('Power', '(right)', _PWR_HEX,  is_area=True)
 
         self._volt_leg.connect_toggle(
             lambda s: self._toggle('volt', s == Qt.Checked))

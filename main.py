@@ -39,7 +39,7 @@ class ProfileCard(QWidget):
         self.nameLabel = BodyLabel(name, self)
         self.emailLabel = CaptionLabel(email, self)
         self.logoutButton = HyperlinkButton(
-            'https://github.com/MisakaMikoto128', '注销', self)
+            'https://github.com/MisakaMikoto128', 'Sign out', self)
         color = QColor(206, 206, 206) if isDarkTheme() else QColor(96, 96, 96)
         self.emailLabel.setStyleSheet('QLabel{color: ' + color.name() + '}')
         color = QColor(255, 255, 255) if isDarkTheme() else QColor(0, 0, 0)
@@ -94,8 +94,8 @@ class Window(FluentWindow):
         self.trayIcon.show()
 
     def _init_navigation(self):
-        self.addSubInterface(self.homeInterface, FIF.HOME, '主页')
-        self.addSubInterface(self.manualInterface, FIF.EDIT, '手动操作')
+        self.addSubInterface(self.homeInterface, FIF.HOME, 'Home')
+        self.addSubInterface(self.manualInterface, FIF.EDIT, 'Manual Control')
         self.navigationInterface.addSeparator()
         self.navigationInterface.addWidget(
             routeKey='avatar',
@@ -116,7 +116,7 @@ class Window(FluentWindow):
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
 
     def _show_about(self):
-        MessageBox('支持作者', '🥤🥤🚀', self).exec()
+        MessageBox('Support the author', '🥤🥤🚀', self).exec()
 
     def contextMenuEvent(self, e) -> None:
         menu = AcrylicMenu(parent=self)
@@ -125,12 +125,12 @@ class Window(FluentWindow):
         menu.addWidget(card, selectable=False)
         menu.addSeparator()
         menu.addActions([
-            Action(FluentIcon.PEOPLE, '管理账户和设置'),
-            Action(FluentIcon.SHOPPING_CART, '支付方式'),
-            Action(FluentIcon.CODE, '兑换代码和礼品卡'),
+            Action(FluentIcon.PEOPLE, 'Manage account and settings'),
+            Action(FluentIcon.SHOPPING_CART, 'Payment methods'),
+            Action(FluentIcon.CODE, 'Redeem code or gift card'),
         ])
         menu.addSeparator()
-        menu.addAction(Action(FluentIcon.SETTING, '设置'))
+        menu.addAction(Action(FluentIcon.SETTING, 'Settings'))
         menu.exec(e.globalPos())
 
     def closeEvent(self, event):

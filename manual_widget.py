@@ -17,54 +17,54 @@ import REG1K0100A2 as reg
 
 # ─── 命令定义表 ───────────────────────────────────────────────
 COMMANDS = [
-    {'cmd': 0x01, 'type': 'R', 'desc': '系统电压电流（浮点）',       'params': []},
-    {'cmd': 0x02, 'type': 'R', 'desc': '系统模块数量',               'params': []},
-    {'cmd': 0x03, 'type': 'R', 'desc': '模块N电压电流（浮点）',       'params': []},
-    {'cmd': 0x04, 'type': 'R', 'desc': '模块N状态',                  'params': []},
-    {'cmd': 0x06, 'type': 'R', 'desc': '模块N三相输入电压',           'params': []},
-    {'cmd': 0x08, 'type': 'R', 'desc': '系统电压电流（定点）',        'params': []},
-    {'cmd': 0x09, 'type': 'R', 'desc': '模块N电压电流（定点）',       'params': []},
-    {'cmd': 0x0A, 'type': 'R', 'desc': '模块参数（电压/电流/功率）',  'params': []},
-    {'cmd': 0x0B, 'type': 'R', 'desc': '模块条码',                   'params': []},
-    {'cmd': 0x0C, 'type': 'R', 'desc': '外部电压/允许电流',           'params': []},
-    {'cmd': 0x0F, 'type': 'W', 'desc': '综合设置',                   'params': [], 'special': 'dialog'},
-    {'cmd': 0x13, 'type': 'W', 'desc': 'Walk-In 使能',
-     'params': [{'type': 'combo', 'options': ['使能', '禁止'], 'key': 'enable'}]},
-    {'cmd': 0x14, 'type': 'W', 'desc': '绿灯闪烁',
-     'params': [{'type': 'combo', 'options': ['闪烁', '正常'], 'key': 'blink'}]},
-    {'cmd': 0x16, 'type': 'W', 'desc': '设置组号',
+    {'cmd': 0x01, 'type': 'R', 'desc': 'System voltage/current (float)','params': []},
+    {'cmd': 0x02, 'type': 'R', 'desc': 'System module count','params': []},
+    {'cmd': 0x03, 'type': 'R', 'desc': 'Module N voltage/current (float)','params': []},
+    {'cmd': 0x04, 'type': 'R', 'desc': 'Module N status','params': []},
+    {'cmd': 0x06, 'type': 'R', 'desc': 'Module N three-phase input voltage','params': []},
+    {'cmd': 0x08, 'type': 'R', 'desc': 'System voltage/current (fixed-point)','params': []},
+    {'cmd': 0x09, 'type': 'R', 'desc': 'Module N voltage/current (fixed-point)','params': []},
+    {'cmd': 0x0A, 'type': 'R', 'desc': 'Module parameters (V / I / P)','params': []},
+    {'cmd': 0x0B, 'type': 'R', 'desc': 'Module barcode','params': []},
+    {'cmd': 0x0C, 'type': 'R', 'desc': 'External voltage / allowed current','params': []},
+    {'cmd': 0x0F, 'type': 'W', 'desc': 'Comprehensive settings','params': [], 'special': 'dialog'},
+    {'cmd': 0x13, 'type': 'W', 'desc': 'Walk-In enable',
+     'params': [{'type': 'combo', 'options': ['Enable', 'Disable'], 'key': 'enable'}]},
+    {'cmd': 0x14, 'type': 'W', 'desc': 'Green LED blink',
+     'params': [{'type': 'combo', 'options': ['Blink', 'Normal'], 'key': 'blink'}]},
+    {'cmd': 0x16, 'type': 'W', 'desc': 'Set group number',
      'params': [{'type': 'spin', 'min': 1, 'max': 255, 'default': 1, 'key': 'group'}]},
-    {'cmd': 0x19, 'type': 'W', 'desc': '模块休眠',
-     'params': [{'type': 'combo', 'options': ['休眠', '不休眠'], 'key': 'sleep'}]},
-    {'cmd': 0x1A, 'type': 'W', 'desc': '开关机',
-     'params': [{'type': 'combo', 'options': ['开机', '关机'], 'key': 'power'}]},
-    {'cmd': 0x1B, 'type': 'W', 'desc': '设置系统输出电压/总电流',
+    {'cmd': 0x19, 'type': 'W', 'desc': 'Module sleep',
+     'params': [{'type': 'combo', 'options': ['Sleep', 'Wake'], 'key': 'sleep'}]},
+    {'cmd': 0x1A, 'type': 'W', 'desc': 'Power on/off',
+     'params': [{'type': 'combo', 'options': ['Power on', 'Power off'], 'key': 'power'}]},
+    {'cmd': 0x1B, 'type': 'W', 'desc': 'Set system output voltage / total current',
      'params': [
          {'type': 'double', 'label': 'V', 'key': 'volt', 'min': 150.0, 'max': 1000.0, 'default': 320.0},
          {'type': 'double', 'label': 'A', 'key': 'curr', 'min': 0.0,   'max': 6000.0, 'default': 10.0},
      ], 'addr_lock': 0x3F},
-    {'cmd': 0x1C, 'type': 'W', 'desc': '设置模块电压/电流',
+    {'cmd': 0x1C, 'type': 'W', 'desc': 'Set module voltage / current',
      'params': [
          {'type': 'double', 'label': 'V', 'key': 'volt', 'min': 150.0, 'max': 1000.0, 'default': 320.0},
          {'type': 'double', 'label': 'A', 'key': 'curr', 'min': 0.0,   'max': 100.0,  'default': 10.0},
      ]},
-    {'cmd': 0x1F, 'type': 'W', 'desc': '地址分配方式',
-     'params': [{'type': 'combo', 'options': ['自动分配', '拨码方式'], 'key': 'mode'}],
+    {'cmd': 0x1F, 'type': 'W', 'desc': 'Address assignment mode',
+     'params': [{'type': 'combo', 'options': ['Automatic', 'DIP switch'], 'key': 'mode'}],
      'addr_lock': 0x3F},
 ]
 
 # cmd_code -> 格式化响应字符串的函数（接收 CANControllerInfo 实例）
 RESPONSE_FORMATTERS = {
     0x01: lambda ci: f"{ci.SystemVolt:.2f} V  {ci.SystemCurr:.2f} A",
-    0x02: lambda ci: f"模块数: {ci.ModuleCount}",
+    0x02: lambda ci: f"Modules: {ci.ModuleCount}",
     0x03: lambda ci: f"{ci.ModuleVoltFloat:.2f} V  {ci.ModuleCurrFloat:.2f} A",
-    0x04: lambda ci: f"温度: {ci.Temperature} ℃",
+    0x04: lambda ci: f"Temp: {ci.Temperature} ℃",
     0x06: lambda ci: f"AB:{ci.AC_AB_Volt:.1f}V  BC:{ci.AC_BC_Volt:.1f}V  CA:{ci.AC_CA_Volt:.1f}V",
     0x08: lambda ci: f"{ci.SystemVolt:.2f} V  {ci.SystemCurr:.2f} A",
     0x09: lambda ci: f"{ci.DC_Output_Volt:.2f} V  {ci.DC_Output_Curr:.2f} A",
-    0x0A: lambda ci: f"最大:{ci.ParamVoltMax:.0f}V / {ci.ParamCurrMax:.1f}A  额定:{ci.ParamPower:.0f}W",
+    0x0A: lambda ci: f"Max: {ci.ParamVoltMax:.0f}V / {ci.ParamCurrMax:.1f}A  Rated: {ci.ParamPower:.0f}W",
     0x0B: lambda ci: ci.Barcode if ci.Barcode else "—",
-    0x0C: lambda ci: f"外部:{ci.ExternalVolt:.1f}V  允许:{ci.AllowedCurr:.1f}A",
+    0x0C: lambda ci: f"Ext: {ci.ExternalVolt:.1f}V  Allowed: {ci.AllowedCurr:.1f}A",
 }
 
 # 地址选项（索引 → 地址值）
@@ -75,8 +75,8 @@ class TypeBadgeDelegate(QStyledItemDelegate):
     """为类型列绘制圆角徽章，跟随列宽实时更新（避免 setCellWidget 延迟刷新问题）。"""
 
     _COLORS = {
-        '读': ('#1a3a5c', '#89dceb'),
-        '设': ('#3d1a1a', '#f38ba8'),
+        'READ': ('#1a3a5c', '#89dceb'),
+        'SET': ('#3d1a1a', '#f38ba8'),
     }
 
     def paint(self, painter, option, index):
@@ -122,7 +122,7 @@ class ManualWidget(QFrame):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(8)
 
-        title = SubtitleLabel('手动操作', self)
+        title = SubtitleLabel('Manual Control', self)
         setFont(title, 20)
         layout.addWidget(title)
 
@@ -141,25 +141,25 @@ class ManualWidget(QFrame):
         h.setContentsMargins(0, 0, 0, 0)
         h.setSpacing(10)
 
-        h.addWidget(CaptionLabel('目标地址:', bar))
+        h.addWidget(CaptionLabel('Target address:', bar))
         self.addrCombo = ComboBox(bar)
         for i in range(16):
-            self.addrCombo.addItem(f"0x{i:02X} — 模块 {i}")
-        self.addrCombo.addItem("0x3F — 广播")
+            self.addrCombo.addItem(f"0x{i:02X} — Module {i}")
+        self.addrCombo.addItem("0x3F — Broadcast")
         self.addrCombo.setCurrentIndex(0)
         self.addrCombo.setFixedWidth(160)
         h.addWidget(self.addrCombo)
 
-        h.addWidget(CaptionLabel('设备号:', bar))
+        h.addWidget(CaptionLabel('Device:', bar))
         self.deviceCombo = ComboBox(bar)
-        self.deviceCombo.addItem("0x0A — 单模块")
-        self.deviceCombo.addItem("0x0B — 组")
+        self.deviceCombo.addItem("0x0A — Module")
+        self.deviceCombo.addItem("0x0B — Group")
         self.deviceCombo.setFixedWidth(140)
         h.addWidget(self.deviceCombo)
 
         h.addStretch()
 
-        self.readAllBtn = PushButton('⬇ 读取全部', bar)
+        self.readAllBtn = PushButton('⬇ Read All', bar)
         self.readAllBtn.clicked.connect(self._read_all)
         h.addWidget(self.readAllBtn)
 
@@ -168,7 +168,7 @@ class ManualWidget(QFrame):
     def _build_table(self) -> QWidget:
         self._table = TableWidget(self)
         self._table.setColumnCount(6)
-        self._table.setHorizontalHeaderLabels(['CMD', '类型', '说明', '参数', '响应数据', '操作'])
+        self._table.setHorizontalHeaderLabels(['CMD', 'Type', 'Description', 'Parameters', 'Response', 'Action'])
         self._table.setRowCount(len(COMMANDS))
         self._table.verticalHeader().hide()
         self._table.setEditTriggers(TableWidget.NoEditTriggers)
@@ -178,7 +178,7 @@ class ManualWidget(QFrame):
         self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self._table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
         self._table.setColumnWidth(0, 64)
-        self._table.setColumnWidth(1, 52)
+        self._table.setColumnWidth(1, 64)
         self._table.setColumnWidth(3, 220)
         self._table.setColumnWidth(5, 72)
         self._table.setItemDelegateForColumn(1, TypeBadgeDelegate(self._table))
@@ -194,7 +194,7 @@ class ManualWidget(QFrame):
             self._table.setItem(i, 0, item)
 
             # 列1: 类型（由 TypeBadgeDelegate 绘制，跟随列宽实时更新）
-            type_item = QTableWidgetItem('读' if cmd_def['type'] == 'R' else '设')
+            type_item = QTableWidgetItem('READ' if cmd_def['type'] == 'R' else 'SET')
             type_item.setTextAlignment(Qt.AlignCenter)
             self._table.setItem(i, 1, type_item)
 
@@ -267,22 +267,22 @@ class ManualWidget(QFrame):
                 self._row_widgets[cmd_code][p['key']] = w
             else:
                 raise ValueError(
-                    f"_build_param_widget: 未知参数类型 {p['type']!r}，cmd=0x{cmd_code:02X}")
+                    f"_build_param_widget: unknown parameter type {p['type']!r}, cmd=0x{cmd_code:02X}")
 
         h.addStretch()
         return container
 
     def _build_action_button(self, cmd_def: dict) -> PushButton:
         if cmd_def.get('special') == 'dialog':
-            btn = PushButton('配置...')
+            btn = PushButton('Configure...')
             btn.setStyleSheet(
                 'PushButton{background:#2a1f3d;color:#cba6f7;border:1px solid #453a5a;border-radius:4px}')
         elif cmd_def['type'] == 'R':
-            btn = PushButton('发送')
+            btn = PushButton('Send')
             btn.setStyleSheet(
                 'PushButton{background:#1a3a5c;color:#89b4fa;border:1px solid #2a4a7c;border-radius:4px}')
         else:
-            btn = PushButton('发送')
+            btn = PushButton('Send')
             btn.setStyleSheet(
                 'PushButton{background:#3d1a1a;color:#f38ba8;border:1px solid #5a2020;border-radius:4px}')
         btn.setFixedSize(68, 28)
@@ -298,9 +298,9 @@ class ManualWidget(QFrame):
         header = QWidget(frame)
         hh = QHBoxLayout(header)
         hh.setContentsMargins(0, 0, 0, 0)
-        hh.addWidget(CaptionLabel('📋 CAN 报文日志', frame))
+        hh.addWidget(CaptionLabel('📋 CAN Frame Log', frame))
         hh.addStretch()
-        clear_btn = PushButton('清空')
+        clear_btn = PushButton('Clear')
         clear_btn.setFixedWidth(64)
         clear_btn.clicked.connect(self._clear_log)
         hh.addWidget(clear_btn)
@@ -418,7 +418,7 @@ class ManualWidget(QFrame):
 
     def _open_0F_dialog(self):
         dlg = QDialog(self)
-        dlg.setWindowTitle('综合设置 (0x0F)')
+        dlg.setWindowTitle('Comprehensive Settings (0x0F)')
         dlg.setMinimumWidth(360)
 
         form = QFormLayout(dlg)
@@ -428,37 +428,37 @@ class ManualWidget(QFrame):
 
         # 工作模式
         work_combo = ComboBox(dlg)
-        for txt in ['DCDC', 'MPPT', '输入恒压']:
+        for txt in ['DCDC', 'MPPT', 'Constant input voltage']:
             work_combo.addItem(txt)
-        form.addRow('工作模式:', work_combo)
+        form.addRow('Work mode:', work_combo)
 
         # 降噪模式
         noise_combo = ComboBox(dlg)
-        for txt in ['功率优先', '降噪模式', '静音模式']:
+        for txt in ['Power priority', 'Noise reduction', 'Silent']:
             noise_combo.addItem(txt)
-        form.addRow('降噪模式:', noise_combo)
+        form.addRow('Noise mode:', noise_combo)
 
         # 高低压模式
         volt_combo = ComboBox(dlg)
-        for txt in ['低压模式', '高压模式', '自动切换']:
+        for txt in ['Low-voltage mode', 'High-voltage mode', 'Auto switch']:
             volt_combo.addItem(txt)
-        form.addRow('高低压模式:', volt_combo)
+        form.addRow('Voltage mode:', volt_combo)
 
         # 液冷温度
         tin_spin = QSpinBox(dlg)
         tin_spin.setRange(-40, 125)
         tin_spin.setValue(25)
-        form.addRow('进水口温度 (℃):', tin_spin)
+        form.addRow('Inlet water temp (℃):', tin_spin)
 
         tout_spin = QSpinBox(dlg)
         tout_spin.setRange(-40, 125)
         tout_spin.setValue(30)
-        form.addRow('出水口温度 (℃):', tout_spin)
+        form.addRow('Outlet water temp (℃):', tout_spin)
 
         tamb_spin = QSpinBox(dlg)
         tamb_spin.setRange(-40, 125)
         tamb_spin.setValue(25)
-        form.addRow('环温 (℃):', tamb_spin)
+        form.addRow('Ambient temp (℃):', tamb_spin)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dlg)
@@ -479,4 +479,4 @@ class ManualWidget(QFrame):
             reg.REGx_SetLiquidCoolTemp(dst, tin_spin.value(), tout_spin.value(), tamb_spin.value())
         except Exception as e:
             from PyQt5.QtWidgets import QMessageBox
-            QMessageBox.critical(self, '发送失败', f'0x0F 命令发送失败：{e}')
+            QMessageBox.critical(self, 'Send failed', f'Failed to send 0x0F command: {e}')

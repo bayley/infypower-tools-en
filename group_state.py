@@ -35,26 +35,26 @@ class ModuleState:
         out = []
         s0, s1, s2 = self.status0, self.status1, self.status2
 
-        if s0 & (1 << 7): out.append("通讯中断告警")
-        if s0 & (1 << 6): out.append("风道不畅")
-        if s0 & (1 << 5): out.append("模块放电异常")
-        if s0 & (1 << 3): out.append("输入或母线异常")
+        if s0 & (1 << 7): out.append("Communication loss alarm")
+        if s0 & (1 << 6): out.append("Airflow blocked")
+        if s0 & (1 << 5): out.append("Module discharge abnormal")
+        if s0 & (1 << 3): out.append("Input or bus abnormal")
 
         # 注意：status1 bit 6（Walk-In 使能）是默认特性标志，不算告警
-        if s1 & (1 << 7): out.append("模块通信中断告警")
-        if s1 & (1 << 5): out.append("输出过压告警")
-        if s1 & (1 << 4): out.append("过温告警")
-        if s1 & (1 << 3): out.append("风扇故障告警")
-        if s1 & (1 << 2): out.append("模块保护告警")
-        if s1 & (1 << 1): out.append("模块故障告警")
+        if s1 & (1 << 7): out.append("Module communication loss alarm")
+        if s1 & (1 << 5): out.append("Output overvoltage alarm")
+        if s1 & (1 << 4): out.append("Overtemperature alarm")
+        if s1 & (1 << 3): out.append("Fan fault alarm")
+        if s1 & (1 << 2): out.append("Module protection alarm")
+        if s1 & (1 << 1): out.append("Module fault alarm")
 
-        if s2 & (1 << 7): out.append("模块PFC侧处于关机状态")
-        if s2 & (1 << 6): out.append("输入过压告警")
-        if s2 & (1 << 5): out.append("输入欠压告警")
-        if s2 & (1 << 4): out.append("三相输入不平衡告警")
-        if s2 & (1 << 3): out.append("三相输入缺相告警")
-        if s2 & (1 << 2): out.append("模块严重不均流")
-        if s2 & (1 << 1): out.append("模块ID重复")
+        if s2 & (1 << 7): out.append("Module PFC side is off")
+        if s2 & (1 << 6): out.append("Input overvoltage alarm")
+        if s2 & (1 << 5): out.append("Input undervoltage alarm")
+        if s2 & (1 << 4): out.append("Three-phase input imbalance alarm")
+        if s2 & (1 << 3): out.append("Three-phase input phase-loss alarm")
+        if s2 & (1 << 2): out.append("Severe module current imbalance")
+        if s2 & (1 << 1): out.append("Duplicate module ID")
 
         return out
 

@@ -13,7 +13,7 @@ def test_load_creates_default_file_when_missing(tmp_path):
     result = mgr.load()
 
     assert isinstance(result, AppConfig)
-    assert result.device_name == "REG1K0100A2 充电模块"
+    assert result.device_name == "REG1K0100A2 Charging Module"
     assert result.voltage_max == 1000.0
     assert result.voltage_min == 150.0
     assert result.current_max == 100.0
@@ -25,7 +25,7 @@ def test_load_reads_existing_file(tmp_path):
     from config_manager import ConfigManager, AppConfig
     cfg_path = tmp_path / "config.json"
     data = {
-        "device_name": "测试电源",
+        "device_name": "Test PSU",
         "voltage_max": 750.0,
         "voltage_min": 100.0,
         "current_max": 50.0,
@@ -35,7 +35,7 @@ def test_load_reads_existing_file(tmp_path):
     mgr = ConfigManager(config_path=str(cfg_path))
     result = mgr.load()
 
-    assert result.device_name == "测试电源"
+    assert result.device_name == "Test PSU"
     assert result.voltage_max == 750.0
     assert result.current_max == 50.0
 
@@ -47,7 +47,7 @@ def test_load_returns_defaults_on_corrupt_file(tmp_path):
     mgr = ConfigManager(config_path=str(cfg_path))
     result = mgr.load()
 
-    assert result.device_name == "REG1K0100A2 充电模块"
+    assert result.device_name == "REG1K0100A2 Charging Module"
 
 
 def test_load_returns_new_default_fields(tmp_path):

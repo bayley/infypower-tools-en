@@ -22,7 +22,7 @@
      <item>
       <widget class="TitleLabel" name="TitleLabel_3">
        <property name="text">
-        <string>充电器状态</string>
+        <string>Charger Status</string>
        </property>
       </widget>
      </item>
@@ -51,7 +51,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>充电器控制</string>
+        <string>Charger Control</string>
        </property>
       </widget>
      </item>
@@ -64,14 +64,14 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>CAN收发器控制</string>
+        <string>CAN Transceiver Control</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="ToggleButton" name="ToggleButtonCAN">
        <property name="text">
-        <string>打开CAN</string>
+        <string>Open CAN</string>
        </property>
       </widget>
      </item>
@@ -123,38 +123,38 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>充电器启动控制</string>
+        <string>Charger Start Control</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="PushButton" name="PushButton_OpenDCOutput">
        <property name="text">
-        <string>启动充电输出</string>
+        <string>Start Charging Output</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="PushButton" name="PushButton_CloseDCOutput">
        <property name="text">
-        <string>关闭充电输出</string>
+        <string>Stop Charging Output</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="SwitchButton" name="SwitchButton_Charger">
        <property name="onText">
-        <string>充电器已启动</string>
+        <string>Charger Started</string>
        </property>
        <property name="offText">
-        <string>充电器已关闭</string>
+        <string>Charger Stopped</string>
        </property>
       </widget>
      </item>
      <item>
       <widget class="PushButton" name="PushButton_SetVoltCurr">
        <property name="text">
-        <string>设置输出电压电流</string>
+        <string>Set Output Voltage/Current</string>
        </property>
       </widget>
      </item>
@@ -167,7 +167,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>输出电流</string>
+        <string>Output Current</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -190,7 +190,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>输出电压</string>
+        <string>Output Voltage</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

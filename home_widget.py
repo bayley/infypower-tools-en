@@ -65,13 +65,13 @@ class GroupHomeWidget(QFrame):
         top = QHBoxLayout()
         top.setSpacing(8)
 
-        self.btn_can = ToggleButton('打开 CAN', self)
+        self.btn_can = ToggleButton('Open CAN', self)
         top.addWidget(self.btn_can)
 
-        top.addWidget(BodyLabel('操作组：', self))
+        top.addWidget(BodyLabel('Group:', self))
         self.cbo_group = ComboBox(self)
         for g in range(1, self._cfg.group_range_max + 1):
-            self.cbo_group.addItem(f'组 {g}', userData=g)
+            self.cbo_group.addItem(f'Group {g}', userData=g)
         # 设默认组
         idx = self.cbo_group.findData(self._cfg.default_group)
         if idx >= 0:
@@ -80,7 +80,7 @@ class GroupHomeWidget(QFrame):
         top.addWidget(self.cbo_group)
 
         self.btn_refresh = ToolButton(FIF.SYNC, self)
-        self.btn_refresh.setToolTip('重新发现组内模块')
+        self.btn_refresh.setToolTip('Rediscover modules in this group')
         top.addWidget(self.btn_refresh)
 
         top.addStretch()
@@ -132,10 +132,10 @@ class GroupHomeWidget(QFrame):
             v.addWidget(val)
             return box, val
 
-        c1, self.lbl_v   = metric('组电压')
-        c2, self.lbl_i   = metric('组总电流')
-        c3, self.lbl_p   = metric('组功率')
-        c4, self.lbl_n   = metric('模块数 / 温度')
+        c1, self.lbl_v   = metric('Group Voltage')
+        c2, self.lbl_i   = metric('Group Total Current')
+        c3, self.lbl_p   = metric('Group Power')
+        c4, self.lbl_n   = metric('Modules / Max Temp')
 
         g.addWidget(c1, 0, 0)
         g.addWidget(c2, 0, 1)
@@ -168,36 +168,36 @@ class GroupHomeWidget(QFrame):
         v.setContentsMargins(12, 12, 12, 12)
         v.setSpacing(8)
 
-        v.addWidget(StrongBodyLabel('组控制', panel))
-        v.addWidget(CaptionLabel('设定电压 (V)', panel))
+        v.addWidget(StrongBodyLabel('Group Control', panel))
+        v.addWidget(CaptionLabel('Set Voltage (V)', panel))
         self.spn_v = DoubleSpinBox(panel)
         self.spn_v.setRange(self._cfg.voltage_min, self._cfg.voltage_max)
         self.spn_v.setDecimals(1)
         self.spn_v.setValue(min(320.0, self._cfg.voltage_max))
         v.addWidget(self.spn_v)
 
-        v.addWidget(CaptionLabel('设定组总电流 (A)', panel))
+        v.addWidget(CaptionLabel('Set Group Total Current (A)', panel))
         self.spn_i = DoubleSpinBox(panel)
         self.spn_i.setRange(0.0, self._cfg.current_max)
         self.spn_i.setDecimals(2)
         self.spn_i.setValue(min(10.0, self._cfg.current_max))
         v.addWidget(self.spn_i)
 
-        self.btn_apply = PushButton('设定下发 (0x1B)', panel)
+        self.btn_apply = PushButton('Apply Setpoint (0x1B)', panel)
         v.addWidget(self.btn_apply)
 
         v.addSpacing(8)
-        v.addWidget(CaptionLabel('组开关机 (0x1A)', panel))
-        self.btn_open  = PushButton('启动组输出', panel)
-        self.btn_close = PushButton('关闭组输出', panel)
+        v.addWidget(CaptionLabel('Group Power (0x1A)', panel))
+        self.btn_open  = PushButton('Start Group Output', panel)
+        self.btn_close = PushButton('Stop Group Output', panel)
         v.addWidget(self.btn_open)
         v.addWidget(self.btn_close)
 
         v.addSpacing(8)
-        v.addWidget(CaptionLabel('组当前状态', panel))
+        v.addWidget(CaptionLabel('Group Status', panel))
         self.sw_state = SwitchButton(panel)
-        self.sw_state.setOnText('已开机')
-        self.sw_state.setOffText('已关机')
+        self.sw_state.setOnText('Powered On')
+        self.sw_state.setOffText('Powered Off')
         self.sw_state.setEnabled(False)
         v.addWidget(self.sw_state)
 
@@ -233,7 +233,7 @@ class GroupHomeWidget(QFrame):
     def _toggle_can(self):
         if self.btn_can.isChecked():
             if self._can.open_device():
-                self.btn_can.setText('关闭 CAN')
+                self.btn_can.setText('Close CAN')
                 self._set_active_state()
                 self._poller = GroupPoller(
                     state=self._state,
@@ -250,7 +250,7 @@ class GroupHomeWidget(QFrame):
                 self._poller.detach()
                 self._poller = None
             self._can.close_device()
-            self.btn_can.setText('打开 CAN')
+            self.btn_can.setText('Open CAN')
             self._set_idle_state()
             self._state.modules.clear()
             self.tbl.setRowCount(0)
@@ -272,8 +272,8 @@ class GroupHomeWidget(QFrame):
 
         if old_was_on:
             InfoBar.warning(
-                title='切组提示',
-                content=f'已切到组 {new_group}。旧组（组 {old_group}）将在约 10s 后因协议通讯中断保护自动关机。',
+                title='Group switched',
+                content=f'Switched to group {new_group}. The previous group (group {old_group}) will shut down automatically in about 10 s due to the protocol communication-loss protection.',
                 orient=Qt.Horizontal,
                 isClosable=True,
                 position=InfoBarPosition.TOP_RIGHT,
@@ -312,8 +312,8 @@ class GroupHomeWidget(QFrame):
         REGx_GroupSetOutput(self._state.group_id, v, i)
 
     def _on_group_power(self, on: bool):
-        action = '启动' if on else '关闭'
-        m = MessageBox('确认执行', f'是否{action}组 {self._state.group_id} 的输出？', self)
+        action = 'start' if on else 'stop'
+        m = MessageBox('Confirm', f'Do you want to {action} the output of group {self._state.group_id}?', self)
         if m.exec():
             if on:
                 REGx_GroupLaunch(self._state.group_id)

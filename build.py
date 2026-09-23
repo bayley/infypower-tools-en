@@ -40,7 +40,7 @@ CERT_PFX     = SCRIPT_DIR / 'build_sign.pfx'
 
 # ── App metadata ──────────────────────────────────────────────
 APP_NAME      = 'INFY_POWER'
-APP_DESC      = 'REG1K0100A2 充电模块上位机'
+APP_DESC      = 'REG1K0100A2 Charging Module Host Controller'
 APP_COMPANY   = 'INFYPOWER'
 APP_COPYRIGHT = f'Copyright 2024-{datetime.now().year} INFYPOWER'
 # Files / dirs copied alongside exe in the release folder

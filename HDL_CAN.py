@@ -90,9 +90,9 @@ class CANDev:
     def open_device(self):
         ret = self.canDLL.VCI_OpenDevice(self.VCI_USBCAN2, 0, 0)
         if ret == self.STATUS_OK:
-            print('调用 VCI_OpenDevice成功')
+            print('VCI_OpenDevice succeeded')
         if ret != self.STATUS_OK:
-            print('调用 VCI_OpenDevice出错')
+            print('VCI_OpenDevice failed')
             return False
 
         # 初始0通道
@@ -100,31 +100,31 @@ class CANDev:
                                               0, 0x03, 0x1C, 0)  # 波特率125k，正常模式
         ret = self.canDLL.VCI_InitCAN(VCI_USBCAN2, 0, 0, byref(self.vci_initconfig))
         if ret == STATUS_OK:
-            print('调用 VCI_InitCAN1成功')
+            print('VCI_InitCAN1 succeeded')
         if ret != STATUS_OK:
-            print('调用 VCI_InitCAN1出错')
+            print('VCI_InitCAN1 failed')
             return False
 
         ret = self.canDLL.VCI_StartCAN(VCI_USBCAN2, 0, 0)
         if ret == STATUS_OK:
-            print('调用 VCI_StartCAN1成功')
+            print('VCI_StartCAN1 succeeded')
         if ret != STATUS_OK:
-            print('调用 VCI_StartCAN1出错')
+            print('VCI_StartCAN1 failed')
             return False
 
         # 初始1通道
         ret = self.canDLL.VCI_InitCAN(VCI_USBCAN2, 0, 1, byref(self.vci_initconfig))
         if ret == STATUS_OK:
-            print('调用 VCI_InitCAN2 成功')
+            print('VCI_InitCAN2 succeeded')
         if ret != STATUS_OK:
-            print('调用 VCI_InitCAN2 出错')
+            print('VCI_InitCAN2 failed')
             return False
 
         ret = self.canDLL.VCI_StartCAN(VCI_USBCAN2, 0, 1)
         if ret == STATUS_OK:
-            print('调用 VCI_StartCAN2 成功')
+            print('VCI_StartCAN2 succeeded')
         if ret != STATUS_OK:
-            print('调用 VCI_StartCAN2 出错')
+            print('VCI_StartCAN2 failed')
             return False
 
         self.isCanOpen = True
@@ -154,7 +154,7 @@ class CANDev:
         vci_can_obj = VCI_CAN_OBJ(can_id, 0, 0, 1, 0, externFlag, len(data), bytes_data, reserved)
         ret = self.canDLL.VCI_Transmit(VCI_USBCAN2, 0, channel, byref(vci_can_obj), 1)
         if ret != STATUS_OK:
-            print(f'CAN{channel + 1}通道发送失败')
+            print(f'CAN{channel + 1} channel send failed')
 
     def send_data_ch1(self, can_id: int, data: bytes):
         self.send_data(0, can_id, data)
